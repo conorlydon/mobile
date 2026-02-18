@@ -14,9 +14,8 @@ fun RegisterScreen(
 ) {
 
     var teamName by remember { mutableStateOf("") }
-    var sportType by remember { mutableStateOf("") }
     var skillLevel by remember { mutableStateOf("") }
-    var location by remember { mutableStateOf("") }
+    var eircode by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
@@ -40,13 +39,11 @@ fun RegisterScreen(
             OutlinedTextField(teamName, { teamName = it }, label = { Text("Team Name") }, modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(sportType, { sportType = it }, label = { Text("Sport Type") }, modifier = Modifier.fillMaxWidth())
-            Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(skillLevel, { skillLevel = it }, label = { Text("Skill Level") }, modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(location, { location = it }, label = { Text("Location") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(eircode, { eircode = it }, label = { Text("Eircode") }, modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(email, { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth())

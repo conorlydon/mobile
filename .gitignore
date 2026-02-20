@@ -13,3 +13,38 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Gradle files
+.gradle/
+build/
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# Log/OS Files
+*.log
+
+# Android Studio/IntelliJ files
+*.iml
+.idea/
+
+# Built application files
+*.apk
+*.aab
+*.ap_
+output-metadata.json
+
+# Native builds
+.externalNativeBuild/
+.cxx/
+
+# Keystores and secrets
+*.jks
+*.keystore
+keystore.properties
+
+# Google Services (add if using Firebase, etc.)
+google-services.json
+
+# Profiling
+*.hprof

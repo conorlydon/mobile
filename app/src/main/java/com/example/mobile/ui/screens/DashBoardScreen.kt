@@ -7,8 +7,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.mobile.MetricsService
+import kotlinx.coroutines.launch
 
 data class Challenge(
     val id: String,
@@ -23,6 +27,12 @@ data class Challenge(
 fun DashboardScreen(
     onLogout: () -> Unit
 ) {
+
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        MetricsService.track("dashboard_viewed")
+    }
 
     val dummyChallenges = listOf(
         Challenge("1", "Ballina GAA", "Intermediate", "Ballina Pitch", "14 Feb 2026"),
@@ -42,7 +52,7 @@ fun DashboardScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { }) {
+            FloatingActionButton(onClick = { scope.launch { MetricsService.track("create_challenge_tapped") } }) {
                 Icon(Icons.Default.Add, contentDescription = "Create")
             }
         }
@@ -63,6 +73,8 @@ fun DashboardScreen(
 @Composable
 fun ChallengeCard(challenge: Challenge) {
 
+    val scope = rememberCoroutineScope()
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -79,7 +91,7 @@ fun ChallengeCard(challenge: Challenge) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Button(onClick = { }) {
+            Button(onClick = { scope.launch { MetricsService.track("view_challenge_tapped") } }) {
                 Text("View Details")
             }
         }

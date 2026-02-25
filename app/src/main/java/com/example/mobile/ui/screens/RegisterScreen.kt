@@ -8,6 +8,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import com.example.mobile.MetricsService
 import com.example.mobile.SupabaseClient
 
 
@@ -119,6 +120,7 @@ fun RegisterScreen(
                             if (inserted.isEmpty()) {
                                 errorMessage = "Failed to register (no response)"
                             } else {
+                                MetricsService.track("club_joined")
                                 onRegisterSuccess()
                             }
 

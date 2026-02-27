@@ -1,12 +1,16 @@
 package com.example.mobile.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.mobile.SessionManager
 import com.example.mobile.ui.screens.DashboardScreen
 import com.example.mobile.ui.screens.LoginScreen
 import com.example.mobile.ui.screens.RegisterScreen
+import kotlinx.coroutines.launch
 
 object Routes {
     const val LOGIN = "login"
@@ -15,11 +19,16 @@ object Routes {
 }
 
 @Composable
-fun AppNavGraph(navController: NavHostController) {
+fun AppNavGraph(
+    navController: NavHostController,
+    startDestination: String
+) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     NavHost(
         navController = navController,
-        startDestination = Routes.LOGIN
+        startDestination = startDestination
     ) {
 
         composable(Routes.LOGIN) {
@@ -51,8 +60,11 @@ fun AppNavGraph(navController: NavHostController) {
         composable(Routes.DASHBOARD) {
             DashboardScreen(
                 onLogout = {
-                    navController.navigate(Routes.LOGIN) {
-                        popUpTo(0)
+                    coroutineScope.launch {
+                        SessionManager(context).clearSession()
+                        navController.navigate(Routes.LOGIN) {
+                            popUpTo(0)
+                        }
                     }
                 }
             )

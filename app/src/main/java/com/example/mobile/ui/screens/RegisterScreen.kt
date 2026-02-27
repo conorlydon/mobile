@@ -4,11 +4,17 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.example.mobile.SessionManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import com.example.mobile.SupabaseClient
+import com.example.mobile.StoredSession
+import io.github.jan.supabase.auth.providers.builtin.Email
 
 
 
@@ -34,6 +40,7 @@ fun RegisterScreen(
     var errorMessage by remember { mutableStateOf("") }
 
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     Scaffold { padding ->
         Column(
@@ -102,19 +109,39 @@ fun RegisterScreen(
                         errorMessage = ""
 
                         try {
-                            // Attempt insertion and decode list of inserted rows
-                            val inserted = SupabaseClient.postgrest["users"]
-                                .insert(
-                                    mapOf(
-                                        "email" to email,
-                                        "password" to password,
-                                        "skill_level" to skillLevel,
-                                        "eircode" to eircode
-                                    )
-                                ) {
-                                    select()  // return the inserted row(s)
+                            val (session, inserted) = withContext(Dispatchers.IO) {
+                                SupabaseClient.auth.signUpWith(Email) {
+                                    this.email = email
+                                    this.password = password
                                 }
-                                .decodeList<User>() // get inserted results
+
+                                val session = SupabaseClient.auth.currentSessionOrNull()
+
+                                // Attempt insertion and decode list of inserted rows
+                                val inserted = SupabaseClient.postgrest["users"]
+                                    .insert(
+                                        mapOf(
+                                            "email" to email,
+                                            "password" to password,
+                                            "skill_level" to skillLevel,
+                                            "eircode" to eircode
+                                        )
+                                    ) {
+                                        select()  // return the inserted row(s)
+                                    }
+                                    .decodeList<User>() // get inserted results
+
+                                session to inserted
+                            }
+
+                            if (session != null) {
+                                SessionManager(context).saveSession(
+                                    StoredSession(
+                                        accessToken = session.accessToken,
+                                        refreshToken = session.refreshToken
+                                    )
+                                )
+                            }
 
                             if (inserted.isEmpty()) {
                                 errorMessage = "Failed to register (no response)"

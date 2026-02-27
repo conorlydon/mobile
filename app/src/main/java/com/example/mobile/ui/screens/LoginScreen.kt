@@ -5,8 +5,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.example.mobile.SessionManager
+import com.example.mobile.StoredSession
+import com.example.mobile.SupabaseClient
+import io.github.jan.supabase.auth.providers.builtin.Email
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun LoginScreen(
@@ -16,6 +24,11 @@ fun LoginScreen(
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     Scaffold { padding ->
 
@@ -51,13 +64,48 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            if (errorMessage.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(errorMessage, color = MaterialTheme.colorScheme.error)
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = onLoginSuccess,
-                modifier = Modifier.fillMaxWidth()
+                onClick = {
+                    coroutineScope.launch {
+                        isLoading = true
+                        errorMessage = ""
+                        try {
+                            val session = withContext(Dispatchers.IO) {
+                                SupabaseClient.auth.signInWith(Email) {
+                                    this.email = email
+                                    this.password = password
+                                }
+                                SupabaseClient.auth.currentSessionOrNull()
+                            }
+                            if (session == null) {
+                                errorMessage = "Login failed (no session)"
+                            } else {
+                                SessionManager(context).saveSession(
+                                    StoredSession(
+                                        accessToken = session.accessToken,
+                                        refreshToken = session.refreshToken
+                                    )
+                                )
+                                onLoginSuccess()
+                            }
+                        } catch (e: Exception) {
+                            errorMessage = e.localizedMessage ?: "Login failed"
+                        } finally {
+                            isLoading = false
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isLoading
             ) {
-                Text("Login")
+                Text(if (isLoading) "Logging in..." else "Login")
             }
 
             Spacer(modifier = Modifier.height(12.dp))

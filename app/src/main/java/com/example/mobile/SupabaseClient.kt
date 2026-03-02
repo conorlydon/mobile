@@ -5,7 +5,10 @@ import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 object SupabaseClient {
     // Replace with your Supabase project URL and anon key
@@ -24,6 +27,30 @@ object SupabaseClient {
             this.email = email
             this.password = password
         }
+    }
+
+    suspend fun registerTeam(
+        email: String,
+        password: String,
+        skillLevel: String,
+        eircode: String
+    ) {
+        signUpWithEmail(email = email, password = password)
+
+        val currentUser = supabase.auth.currentUserOrNull()
+            ?: throw IllegalStateException(
+                "No active session after sign up. For prototype environments using fake emails, " +
+                        "disable Confirm email in Supabase Auth settings."
+            )
+
+        postgrest.from("users").upsert(
+            buildJsonObject {
+                put("id", currentUser.id)
+                put("email", currentUser.email ?: email)
+                put("skill_level", skillLevel)
+                put("eircode", eircode)
+            }
+        )
     }
 
     suspend fun signInWithEmail(email: String, password: String) {

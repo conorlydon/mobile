@@ -9,12 +9,12 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import com.example.mobile.MetricsService
 import com.example.mobile.SupabaseClient
+
 @Composable
 fun RegisterScreen(
     onRegisterSuccess: () -> Unit,
     onNavigateToLogin: () -> Unit
 ) {
-    var teamName by remember { mutableStateOf("") }
     var skillLevel by remember { mutableStateOf("") }
     var eircode by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -36,14 +36,6 @@ fun RegisterScreen(
             Text("Create Team Account", style = MaterialTheme.typography.headlineMedium)
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = teamName,
-                onValueChange = { teamName = it },
-                label = { Text("Team Name") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
                 value = skillLevel,
@@ -91,9 +83,11 @@ fun RegisterScreen(
                         errorMessage = ""
 
                         try {
-                            SupabaseClient.signUpWithEmail(
+                            SupabaseClient.registerTeam(
                                 email = email.trim(),
-                                password = password
+                                password = password,
+                                skillLevel = skillLevel.trim(),
+                                eircode = eircode.trim()
                             )
                             MetricsService.track("club_joined")
                             onRegisterSuccess()

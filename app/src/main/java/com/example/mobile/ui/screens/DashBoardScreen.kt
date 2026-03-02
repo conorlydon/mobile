@@ -25,6 +25,8 @@ data class Challenge(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
+    challenges: List<Challenge>,
+    onNavigateToCreate: () -> Unit,
     onLogout: () -> Unit
 ) {
 
@@ -33,12 +35,6 @@ fun DashboardScreen(
     LaunchedEffect(Unit) {
         MetricsService.track("dashboard_viewed")
     }
-
-    val dummyChallenges = listOf(
-        Challenge("1", "Ballina GAA", "Intermediate", "Ballina Pitch", "14 Feb 2026"),
-        Challenge("2", "Castlebar FC", "Junior", "Castlebar Astro", "20 Feb 2026"),
-        Challenge("3", "Westport United", "Senior", "Westport Grounds", "25 Feb 2026")
-    )
 
     Scaffold(
         topBar = {
@@ -52,7 +48,10 @@ fun DashboardScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { scope.launch { MetricsService.track("create_challenge_tapped") } }) {
+            FloatingActionButton(onClick = {
+                scope.launch { MetricsService.track("create_challenge_tapped") }
+                onNavigateToCreate()
+            }) {
                 Icon(Icons.Default.Add, contentDescription = "Create")
             }
         }
@@ -63,7 +62,7 @@ fun DashboardScreen(
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            items(dummyChallenges) { challenge ->
+            items(challenges) { challenge ->
                 ChallengeCard(challenge)
             }
         }

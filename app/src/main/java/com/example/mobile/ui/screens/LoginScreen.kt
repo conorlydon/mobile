@@ -8,6 +8,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.mobile.MetricsService
+import com.example.mobile.SupabaseClient
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
@@ -17,6 +19,10 @@ fun LoginScreen(
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         MetricsService.track("login_viewed")
@@ -56,13 +62,36 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            if (errorMessage.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(errorMessage, color = MaterialTheme.colorScheme.error)
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = onLoginSuccess,
-                modifier = Modifier.fillMaxWidth()
+                onClick = {
+                    coroutineScope.launch {
+                        isLoading = true
+                        errorMessage = ""
+
+                        try {
+                            SupabaseClient.signInWithEmail(
+                                email = email.trim(),
+                                password = password
+                            )
+                            onLoginSuccess()
+                        } catch (e: Exception) {
+                            errorMessage = "invalid credentials, please ensure your email and password is correct"
+                        } finally {
+                            isLoading = false
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isLoading
             ) {
-                Text("Login")
+                Text(if (isLoading) "Logging in..." else "Login")
             }
 
             Spacer(modifier = Modifier.height(12.dp))

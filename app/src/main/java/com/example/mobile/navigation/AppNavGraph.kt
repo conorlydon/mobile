@@ -4,11 +4,13 @@ import androidx.compose.runtime.*
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.mobile.SupabaseClient
 import com.example.mobile.ui.screens.Challenge
 import com.example.mobile.ui.screens.CreateChallengeScreen
 import com.example.mobile.ui.screens.DashboardScreen
 import com.example.mobile.ui.screens.LoginScreen
 import com.example.mobile.ui.screens.RegisterScreen
+import kotlinx.coroutines.launch
 
 object Routes {
     const val LOGIN = "login"
@@ -19,6 +21,12 @@ object Routes {
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
+    val scope = rememberCoroutineScope()
+    val startDestination = if (SupabaseClient.hasActiveSession()) {
+        Routes.DASHBOARD
+    } else {
+        Routes.LOGIN
+    }
 
     val challenges = remember {
         mutableStateListOf(
@@ -30,7 +38,7 @@ fun AppNavGraph(navController: NavHostController) {
 
     NavHost(
         navController = navController,
-        startDestination = Routes.LOGIN
+        startDestination = startDestination
     ) {
 
         composable(Routes.LOGIN) {
@@ -66,8 +74,11 @@ fun AppNavGraph(navController: NavHostController) {
                     navController.navigate(Routes.CREATE_CHALLENGE)
                 },
                 onLogout = {
-                    navController.navigate(Routes.LOGIN) {
-                        popUpTo(0)
+                    scope.launch {
+                        SupabaseClient.signOut()
+                        navController.navigate(Routes.LOGIN) {
+                            popUpTo(0)
+                        }
                     }
                 }
             )

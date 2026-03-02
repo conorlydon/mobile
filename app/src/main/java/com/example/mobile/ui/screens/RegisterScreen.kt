@@ -7,20 +7,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
 import com.example.mobile.MetricsService
 import com.example.mobile.SupabaseClient
-
-
-
-@Serializable
-data class User(
-    val id: String? = null,
-    val email: String,
-    val password: String,
-    val skill_level: String,
-    val eircode: String
-)
 @Composable
 fun RegisterScreen(
     onRegisterSuccess: () -> Unit,
@@ -103,26 +91,12 @@ fun RegisterScreen(
                         errorMessage = ""
 
                         try {
-                            // Attempt insertion and decode list of inserted rows
-                            val inserted = SupabaseClient.postgrest["users"]
-                                .insert(
-                                    mapOf(
-                                        "email" to email,
-                                        "password" to password,
-                                        "skill_level" to skillLevel,
-                                        "eircode" to eircode
-                                    )
-                                ) {
-                                    select()  // return the inserted row(s)
-                                }
-                                .decodeList<User>() // get inserted results
-
-                            if (inserted.isEmpty()) {
-                                errorMessage = "Failed to register (no response)"
-                            } else {
-                                MetricsService.track("club_joined")
-                                onRegisterSuccess()
-                            }
+                            SupabaseClient.signUpWithEmail(
+                                email = email.trim(),
+                                password = password
+                            )
+                            MetricsService.track("club_joined")
+                            onRegisterSuccess()
 
                         } catch (e: Exception) {
                             errorMessage = e.localizedMessage ?: "Unknown error"

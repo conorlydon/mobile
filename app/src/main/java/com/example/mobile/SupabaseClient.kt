@@ -60,6 +60,10 @@ object SupabaseClient {
         }
     }
 
+    suspend fun fetchChallenges(): List<com.example.mobile.ui.screens.Challenge> {
+        return postgrest.from("challenges").select().decodeList()
+    }
+
     suspend fun insertChallenge(challenge: com.example.mobile.ui.screens.Challenge) {
         postgrest.from("challenges").insert(
             buildJsonObject {

@@ -11,6 +11,9 @@ import com.example.mobile.ui.screens.DashboardScreen
 import com.example.mobile.ui.screens.LoginScreen
 import com.example.mobile.ui.screens.RegisterScreen
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 object Routes {
     const val LOGIN = "login"
@@ -29,6 +32,19 @@ fun AppNavGraph(navController: NavHostController) {
     }
 
     val challenges = remember { mutableStateListOf<Challenge>() }
+
+    val dateFormatter = remember { SimpleDateFormat("d MMM yyyy", Locale.ENGLISH) }
+    val activeChallenges = remember(challenges.toList()) {
+        val today = dateFormatter.parse(SimpleDateFormat("d MMM yyyy", Locale.ENGLISH).format(Date()))
+        challenges.filter { challenge ->
+            try {
+                val challengeDate = dateFormatter.parse(challenge.date)
+                challengeDate != null && !challengeDate.before(today)
+            } catch (e: Exception) {
+                true
+            }
+        }
+    }
 
     NavHost(
         navController = navController,
@@ -62,8 +78,13 @@ fun AppNavGraph(navController: NavHostController) {
         }
 
         composable(Routes.DASHBOARD) {
+            LaunchedEffect(Unit) {
+                val fetched = SupabaseClient.fetchChallenges()
+                challenges.clear()
+                challenges.addAll(fetched)
+            }
             DashboardScreen(
-                challenges = challenges,
+                challenges = activeChallenges,
                 onNavigateToCreate = {
                     navController.navigate(Routes.CREATE_CHALLENGE)
                 },

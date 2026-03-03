@@ -11,9 +11,8 @@ import com.example.mobile.ui.screens.DashboardScreen
 import com.example.mobile.ui.screens.LoginScreen
 import com.example.mobile.ui.screens.RegisterScreen
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import kotlinx.datetime.LocalDate
+import java.util.Calendar
 
 object Routes {
     const val LOGIN = "login"
@@ -33,17 +32,10 @@ fun AppNavGraph(navController: NavHostController) {
 
     val challenges = remember { mutableStateListOf<Challenge>() }
 
-    val dateFormatter = remember { SimpleDateFormat("d MMM yyyy", Locale.ENGLISH) }
     val activeChallenges = remember(challenges.toList()) {
-        val today = dateFormatter.parse(SimpleDateFormat("d MMM yyyy", Locale.ENGLISH).format(Date()))
-        challenges.filter { challenge ->
-            try {
-                val challengeDate = dateFormatter.parse(challenge.date)
-                challengeDate != null && !challengeDate.before(today)
-            } catch (e: Exception) {
-                true
-            }
-        }
+        val cal = Calendar.getInstance()
+        val today = LocalDate(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH))
+        challenges.filter { it.date >= today }
     }
 
     NavHost(

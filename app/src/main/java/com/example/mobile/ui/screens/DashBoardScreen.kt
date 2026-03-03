@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.mobile.MetricsService
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -22,8 +23,13 @@ data class Challenge(
     @SerialName("team_name") val teamName: String,
     @SerialName("skill_level") val skillLevel: String,
     val location: String,
-    val date: String
+    val date: LocalDate
 )
+
+fun LocalDate.display(): String {
+    val mon = month.name[0] + month.name.drop(1).take(2).lowercase()
+    return "$dayOfMonth $mon $year"
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -89,7 +95,7 @@ fun ChallengeCard(challenge: Challenge) {
             Spacer(modifier = Modifier.height(4.dp))
             Text("Level: ${challenge.skillLevel}")
             Text("Location: ${challenge.location}")
-            Text("Date: ${challenge.date}")
+            Text("Date: ${challenge.date.display()}")
 
             Spacer(modifier = Modifier.height(8.dp))
 

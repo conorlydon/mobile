@@ -71,7 +71,7 @@ object SupabaseClient {
                 put("team_name", challenge.teamName)
                 put("skill_level", challenge.skillLevel)
                 put("location", challenge.location)
-                put("date", challenge.date)
+                put("date", challenge.date.toString())
             }
         )
     }

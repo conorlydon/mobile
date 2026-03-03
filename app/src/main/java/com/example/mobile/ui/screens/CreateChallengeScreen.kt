@@ -7,6 +7,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlinx.datetime.LocalDate
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -20,7 +24,27 @@ fun CreateChallengeScreen(
     var location by remember { mutableStateOf("") }
     var date by remember { mutableStateOf("") }
 
-    val isValid = teamName.isNotBlank() && skillLevel.isNotBlank() && location.isNotBlank() && date.isNotBlank()
+    val parsedDate: LocalDate? = remember(date) {
+        try {
+            val sdf = SimpleDateFormat("d MMM yyyy", Locale.ENGLISH).apply { isLenient = false }
+            val javaDate = sdf.parse(date.trim()) ?: return@remember null
+            val cal = Calendar.getInstance().apply { time = javaDate }
+            LocalDate(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH))
+        } catch (e: Exception) { null }
+    }
+
+    val dateError: String? = remember(date) {
+        val cal = Calendar.getInstance()
+        val today = LocalDate(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH))
+        when {
+            date.isBlank() -> null
+            parsedDate == null -> "Use format: 14 Feb 2026"
+            parsedDate < today -> "Date must be today or in the future"
+            else -> null
+        }
+    }
+
+    val isValid = teamName.isNotBlank() && skillLevel.isNotBlank() && location.isNotBlank() && parsedDate != null && dateError == null
 
     Scaffold(
         topBar = {
@@ -68,7 +92,9 @@ fun CreateChallengeScreen(
                 label = { Text("Date") },
                 placeholder = { Text("e.g. 14 Feb 2026") },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                isError = dateError != null,
+                supportingText = dateError?.let { error -> { Text(error) } }
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -81,7 +107,7 @@ fun CreateChallengeScreen(
                             teamName = teamName.trim(),
                             skillLevel = skillLevel.trim(),
                             location = location.trim(),
-                            date = date.trim()
+                            date = parsedDate!!
                         )
                     )
                 },

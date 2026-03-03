@@ -11,12 +11,11 @@ import kotlinx.datetime.LocalDate
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateChallengeScreen(
-    onCreate: (Challenge) -> Unit,
+    onCreate: (teamName: String, skillLevel: String, location: String, date: LocalDate) -> Unit,
     onBack: () -> Unit
 ) {
     var teamName by remember { mutableStateOf("") }
@@ -102,13 +101,10 @@ fun CreateChallengeScreen(
             Button(
                 onClick = {
                     onCreate(
-                        Challenge(
-                            id = UUID.randomUUID().toString(),
-                            teamName = teamName.trim(),
-                            skillLevel = skillLevel.trim(),
-                            location = location.trim(),
-                            date = parsedDate!!
-                        )
+                        teamName.trim(),
+                        skillLevel.trim(),
+                        location.trim(),
+                        parsedDate!!
                     )
                 },
                 enabled = isValid,

@@ -28,13 +28,7 @@ fun AppNavGraph(navController: NavHostController) {
         Routes.LOGIN
     }
 
-    val challenges = remember {
-        mutableStateListOf(
-            Challenge("1", "Ballina GAA", "Intermediate", "Ballina Pitch", "14 Feb 2026"),
-            Challenge("2", "Castlebar FC", "Junior", "Castlebar Astro", "20 Feb 2026"),
-            Challenge("3", "Westport United", "Senior", "Westport Grounds", "25 Feb 2026")
-        )
-    }
+    val challenges = remember { mutableStateListOf<Challenge>() }
 
     NavHost(
         navController = navController,
@@ -87,6 +81,9 @@ fun AppNavGraph(navController: NavHostController) {
         composable(Routes.CREATE_CHALLENGE) {
             CreateChallengeScreen(
                 onCreate = { newChallenge ->
+                    scope.launch {
+                        SupabaseClient.insertChallenge(newChallenge)
+                    }
                     challenges.add(newChallenge)
                     navController.popBackStack()
                 },

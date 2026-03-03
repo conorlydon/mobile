@@ -60,6 +60,18 @@ object SupabaseClient {
         }
     }
 
+    suspend fun insertChallenge(challenge: com.example.mobile.ui.screens.Challenge) {
+        postgrest.from("challenges").insert(
+            buildJsonObject {
+                put("id", challenge.id)
+                put("team_name", challenge.teamName)
+                put("skill_level", challenge.skillLevel)
+                put("location", challenge.location)
+                put("date", challenge.date)
+            }
+        )
+    }
+
     suspend fun signOut() {
         supabase.auth.signOut()
     }

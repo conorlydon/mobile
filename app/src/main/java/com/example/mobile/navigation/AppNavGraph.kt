@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.mobile.SupabaseClient
 import com.example.mobile.ui.screens.Challenge
+import com.example.mobile.ui.screens.ChallengeDetailScreen
 import com.example.mobile.ui.screens.CreateChallengeScreen
 import com.example.mobile.ui.screens.DashboardScreen
 import com.example.mobile.ui.screens.LoginScreen
@@ -19,6 +20,7 @@ object Routes {
     const val REGISTER = "register"
     const val DASHBOARD = "dashboard"
     const val CREATE_CHALLENGE = "create_challenge"
+    const val CHALLENGE_DETAIL = "challenge_detail"
 }
 
 @Composable
@@ -31,6 +33,7 @@ fun AppNavGraph(navController: NavHostController) {
     }
 
     val challenges = remember { mutableStateListOf<Challenge>() }
+    var selectedChallenge by remember { mutableStateOf<Challenge?>(null) }
 
     val activeChallenges = remember(challenges.toList()) {
         val cal = Calendar.getInstance()
@@ -80,6 +83,10 @@ fun AppNavGraph(navController: NavHostController) {
                 onNavigateToCreate = {
                     navController.navigate(Routes.CREATE_CHALLENGE)
                 },
+                onViewDetails = { challenge ->
+                    selectedChallenge = challenge
+                    navController.navigate(Routes.CHALLENGE_DETAIL)
+                },
                 onLogout = {
                     scope.launch {
                         SupabaseClient.signOut()
@@ -89,6 +96,15 @@ fun AppNavGraph(navController: NavHostController) {
                     }
                 }
             )
+        }
+
+        composable(Routes.CHALLENGE_DETAIL) {
+            selectedChallenge?.let { challenge ->
+                ChallengeDetailScreen(
+                    challenge = challenge,
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
 
         composable(Routes.CREATE_CHALLENGE) {

@@ -23,7 +23,8 @@ data class Challenge(
     @SerialName("team_name") val teamName: String,
     @SerialName("skill_level") val skillLevel: String,
     val location: String,
-    val date: LocalDate
+    val date: LocalDate,
+    @SerialName("created_by_email") val createdByEmail: String? = null
 )
 
 fun LocalDate.display(): String {
@@ -36,6 +37,7 @@ fun LocalDate.display(): String {
 fun DashboardScreen(
     challenges: List<Challenge>,
     onNavigateToCreate: () -> Unit,
+    onViewDetails: (Challenge) -> Unit,
     onLogout: () -> Unit
 ) {
 
@@ -72,14 +74,14 @@ fun DashboardScreen(
                 .padding(16.dp)
         ) {
             items(challenges) { challenge ->
-                ChallengeCard(challenge)
+                ChallengeCard(challenge, onViewDetails)
             }
         }
     }
 }
 
 @Composable
-fun ChallengeCard(challenge: Challenge) {
+fun ChallengeCard(challenge: Challenge, onViewDetails: (Challenge) -> Unit) {
 
     val scope = rememberCoroutineScope()
 
@@ -99,7 +101,10 @@ fun ChallengeCard(challenge: Challenge) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Button(onClick = { scope.launch { MetricsService.track("view_challenge_tapped") } }) {
+            Button(onClick = {
+                scope.launch { MetricsService.track("view_challenge_tapped") }
+                onViewDetails(challenge)
+            }) {
                 Text("View Details")
             }
         }

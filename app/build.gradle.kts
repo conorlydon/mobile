@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     kotlin("plugin.serialization") version "2.2.0"
+    kotlin("kapt")
 }
 
 android {
@@ -42,27 +43,31 @@ android {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
-    // Supabase “BOM” for consistent versions
+
     implementation(platform("io.github.jan-tennert.supabase:bom:3.2.6"))
-
-    // PostgREST client (for database operations)
     implementation("io.github.jan-tennert.supabase:postgrest-kt")
-
-    // (Optional) for Supabase Auth functionality
     implementation("io.github.jan-tennert.supabase:auth-kt")
-
-    // Ktor engine for Android
     implementation("io.ktor:ktor-client-android:3.4.0")
+
     implementation("androidx.navigation:navigation-compose:2.7.7")
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
     implementation(libs.androidx.activity.compose)
+
+    implementation("androidx.room:room-runtime:2.8.0")
+    implementation("androidx.room:room-ktx:2.8.0")
+    kapt("androidx.room:room-compiler:2.8.0")
+
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

@@ -7,6 +7,7 @@ import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
+import com.example.mobile.domain.challenges.Challenge
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
@@ -60,11 +61,11 @@ object SupabaseClient {
         }
     }
 
-    suspend fun fetchChallenges(): List<com.example.mobile.ui.screens.Challenge> {
+    suspend fun fetchChallenges(): List<Challenge> {
         return postgrest.from("challenges").select().decodeList()
     }
 
-    suspend fun insertChallenge(challenge: com.example.mobile.ui.screens.Challenge) {
+    suspend fun insertChallenge(challenge: Challenge) {
         val email = supabase.auth.currentUserOrNull()?.email ?: ""
         postgrest.from("challenges").insert(
             buildJsonObject {

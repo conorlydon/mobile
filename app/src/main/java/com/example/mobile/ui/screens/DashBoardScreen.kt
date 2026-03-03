@@ -13,11 +13,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.mobile.MetricsService
 import kotlinx.coroutines.launch
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class Challenge(
     val id: String,
-    val teamName: String,
-    val skillLevel: String,
+    @SerialName("team_name") val teamName: String,
+    @SerialName("skill_level") val skillLevel: String,
     val location: String,
     val date: String
 )

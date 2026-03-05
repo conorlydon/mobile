@@ -1,3 +1,7 @@
+
+
+*.db
+
 *.iml
 .gradle
 /local.properties

@@ -93,7 +93,18 @@ fun RegisterScreen(
                             onRegisterSuccess()
 
                         } catch (e: Exception) {
-                            errorMessage = e.localizedMessage ?: "Unknown error"
+                            errorMessage = when {
+                                skillLevel.isBlank() -> "Please enter your team's skill level"
+                                eircode.isBlank() -> "Please enter your eircode"
+                                email.isBlank() -> "Please enter your email address"
+                                password.isBlank() -> "Please enter a password"
+                                !email.contains("@") -> "Please enter a valid email address"
+                                password.length < 6 -> "Password must be at least 6 characters long"
+                                eircode.length < 3 -> "Please enter a valid eircode"
+                                e.message?.contains("already registered", ignoreCase = true) == true -> "An account with this email already exists. Please login instead."
+                                e.message?.contains("weak password", ignoreCase = true) == true -> "Password is too weak. Please choose a stronger password."
+                                else -> "Registration failed. Please check your information and try again."
+                            }
                         } finally {
                             isLoading = false
                         }

@@ -40,7 +40,14 @@ class ChallengesViewModel(
     fun refreshChallenges() {
         viewModelScope.launch {
             runCatching { repository.refreshChallenges() }
-                .onFailure { _errorMessage.value = it.localizedMessage ?: "Failed to refresh challenges" }
+                .onFailure { 
+                    _errorMessage.value = when {
+                        it.message?.contains("network", ignoreCase = true) == true -> "Unable to connect. Please check your internet connection and try again."
+                        it.message?.contains("timeout", ignoreCase = true) == true -> "Connection timed out. Please try again."
+                        it.message?.contains("unauthorized", ignoreCase = true) == true -> "Please login to view challenges."
+                        else -> "Couldn't load challenges. Please pull down to refresh."
+                    }
+                }
         }
     }
 
@@ -62,7 +69,14 @@ class ChallengesViewModel(
             }.onSuccess {
                 onSuccess()
             }.onFailure {
-                _errorMessage.value = it.localizedMessage ?: "Failed to create challenge"
+                _errorMessage.value = when {
+                    teamName.isBlank() -> "Please enter a team name"
+                    skillLevel.isBlank() -> "Please enter a skill level"
+                    location.isBlank() -> "Please enter a location"
+                    it.message?.contains("network", ignoreCase = true) == true -> "Unable to connect. Please check your internet connection and try again."
+                    it.message?.contains("exists", ignoreCase = true) == true -> "A challenge with these details already exists."
+                    else -> "Couldn't create challenge. Please try again."
+                }
             }
         }
     }

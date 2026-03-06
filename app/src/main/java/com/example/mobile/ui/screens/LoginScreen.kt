@@ -82,7 +82,15 @@ fun LoginScreen(
                             )
                             onLoginSuccess()
                         } catch (e: Exception) {
-                            errorMessage = "invalid credentials, please ensure your email and password is correct"
+                            errorMessage = when {
+                                email.isBlank() -> "Please enter your email address"
+                                password.isBlank() -> "Please enter your password"
+                                !email.contains("@") -> "Please enter a valid email address"
+                                password.length < 6 -> "Password must be at least 6 characters long"
+                                e.message?.contains("Invalid login", ignoreCase = true) == true -> "Incorrect email or password. Please try again."
+                                e.message?.contains("User not found", ignoreCase = true) == true -> "No account found with this email. Please register first."
+                                else -> "Login failed. Please check your credentials and try again."
+                            }
                         } finally {
                             isLoading = false
                         }

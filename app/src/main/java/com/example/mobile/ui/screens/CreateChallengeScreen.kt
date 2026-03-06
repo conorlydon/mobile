@@ -37,8 +37,8 @@ fun CreateChallengeScreen(
         val today = LocalDate(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH))
         when {
             date.isBlank() -> null
-            parsedDate == null -> "Use format: 14 Feb 2026"
-            parsedDate < today -> "Date must be today or in the future"
+            parsedDate == null -> "Please enter a valid date (e.g., 14 Feb 2026)"
+            parsedDate < today -> "Challenge date cannot be in the past. Please choose today or a future date."
             else -> null
         }
     }

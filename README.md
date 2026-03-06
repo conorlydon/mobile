@@ -12,7 +12,7 @@ NOTHING MUCH FOR NOW
 
 ## DASHBOARD SCREEN
 
-VIEW DETAILS SCREEN IS DONE, MAYBE CHANGE
+VIEW DETAILS SCREEN IS DONE, MAYBE CHANGE (Been changed a bit added a join challenge button which copuld use an email api to send an automatic message)
 
 ## ERROR HANDLING
 

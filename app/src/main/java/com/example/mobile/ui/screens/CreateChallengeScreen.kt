@@ -1,11 +1,18 @@
 package com.example.mobile.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.LocalDate
 import java.text.SimpleDateFormat
@@ -22,6 +29,13 @@ fun CreateChallengeScreen(
     var skillLevel by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
     var date by remember { mutableStateOf("") }
+    var isSkillLevelDropdownExpanded by remember { mutableStateOf(false) }
+    
+    val skillLevels = listOf(
+        "Senior", "Intermediate", "Minor", 
+        "U17", "U16", "U15", "U14", "U13", "U12", "U11", "U10", "U9",
+        "Casual"
+    )
 
     val parsedDate: LocalDate? = remember(date) {
         try {
@@ -49,6 +63,11 @@ fun CreateChallengeScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Create Challenge") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFF2E7D32),
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White
+                ),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -57,33 +76,87 @@ fun CreateChallengeScreen(
             )
         }
     ) { padding ->
-        Column(
+        Box(
             modifier = Modifier
-                .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFFE8F5E8),
+                            Color(0xFFF1F8E9),
+                            Color.White
+                        )
+                    )
+                )
         ) {
+            Column(
+                modifier = Modifier
+                    .padding(padding)
+                    .padding(16.dp)
+                    .fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
             OutlinedTextField(
                 value = teamName,
                 onValueChange = { teamName = it },
                 label = { Text("Team Name") },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color(0xFF2E7D32),
+                    focusedLabelColor = Color(0xFF2E7D32),
+                    cursorColor = Color(0xFF2E7D32)
+                )
             )
-            OutlinedTextField(
-                value = skillLevel,
-                onValueChange = { skillLevel = it },
-                label = { Text("Skill Level") },
-                placeholder = { Text("e.g. Junior, Intermediate, Senior") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+            
+            // Skill Level Dropdown
+            ExposedDropdownMenuBox(
+                expanded = isSkillLevelDropdownExpanded,
+                onExpandedChange = { isSkillLevelDropdownExpanded = it }
+            ) {
+                OutlinedTextField(
+                    value = skillLevel,
+                    onValueChange = { skillLevel = it },
+                    readOnly = true,
+                    label = { Text("Skill Level") },
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = isSkillLevelDropdownExpanded)
+                    },
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF2E7D32),
+                        focusedLabelColor = Color(0xFF2E7D32),
+                        cursorColor = Color(0xFF2E7D32)
+                    )
+                )
+                ExposedDropdownMenu(
+                    expanded = isSkillLevelDropdownExpanded,
+                    onDismissRequest = { isSkillLevelDropdownExpanded = false }
+                ) {
+                    skillLevels.forEach { level ->
+                        DropdownMenuItem(
+                            text = { Text(level) },
+                            onClick = {
+                                skillLevel = level
+                                isSkillLevelDropdownExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
             OutlinedTextField(
                 value = location,
                 onValueChange = { location = it },
                 label = { Text("Location") },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color(0xFF2E7D32),
+                    focusedLabelColor = Color(0xFF2E7D32),
+                    cursorColor = Color(0xFF2E7D32)
+                )
             )
             OutlinedTextField(
                 value = date,
@@ -93,7 +166,14 @@ fun CreateChallengeScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 isError = dateError != null,
-                supportingText = dateError?.let { error -> { Text(error) } }
+                supportingText = dateError?.let { error -> { Text(error) } },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color(0xFF2E7D32),
+                    focusedLabelColor = Color(0xFF2E7D32),
+                    cursorColor = Color(0xFF2E7D32),
+                    errorBorderColor = Color(0xFFD32F2F),
+                    errorLabelColor = Color(0xFFD32F2F)
+                )
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -108,9 +188,20 @@ fun CreateChallengeScreen(
                     )
                 },
                 enabled = isValid,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(12.dp)),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF2E7D32),
+                    contentColor = Color.White
+                )
             ) {
-                Text("Create Challenge")
+                Text(
+                    "Create Challenge",
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
             }
         }
     }

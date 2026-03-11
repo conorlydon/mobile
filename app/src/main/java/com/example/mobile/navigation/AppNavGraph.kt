@@ -60,7 +60,7 @@ fun AppNavGraph(navController: NavHostController) {
             RegisterScreen(
                 onRegisterSuccess = {
                     challengesViewModel.refreshChallenges()
-                    navController.navigate(Routes.DASHBOARD) {
+                    navController.navigate(Routes.LOGIN) {
                         popUpTo(Routes.LOGIN) { inclusive = true }
                     }
                 },

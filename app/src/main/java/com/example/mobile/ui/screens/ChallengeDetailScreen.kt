@@ -21,7 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.mobile.domain.challenges.Challenge
 import com.example.mobile.domain.challenges.display
-wait import com.example.mobile.presentation.challenges.DetailUiState
+import com.example.mobile.presentation.challenges.DetailUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

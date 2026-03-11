@@ -21,16 +21,56 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.mobile.domain.challenges.Challenge
 import com.example.mobile.domain.challenges.display
+wait import com.example.mobile.presentation.challenges.DetailUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChallengeDetailScreen(
+    uiState: DetailUiState,
+    onBack: () -> Unit
+) {
+    when (uiState) {
+        is DetailUiState.Loading -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+            return
+        }
+        is DetailUiState.Error -> {
+            Scaffold(
+                topBar = {
+                    TopAppBar(
+                        title = { Text("Challenge") },
+                        navigationIcon = {
+                            IconButton(onClick = onBack) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            }
+                        }
+                    )
+                }
+            ) { padding ->
+                Box(
+                    modifier = Modifier.padding(padding).fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(uiState.message)
+                }
+            }
+            return
+        }
+        is DetailUiState.Success -> ChallengeDetailContent(uiState.challenge, onBack)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ChallengeDetailContent(
     challenge: Challenge,
     onBack: () -> Unit
 ) {
     var showContactDialog by remember { mutableStateOf(false) }
     var showJoinDialog by remember { mutableStateOf(false) }
-    
+
     fun getSkillLevelColor(skillLevel: String): Color {
         return when {
             skillLevel.startsWith("U") -> Color(0xFF1976D2) // Blue for youth

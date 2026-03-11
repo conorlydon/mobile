@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,6 +13,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.example.mobile.presentation.challenges.CreateUiState
 import kotlinx.datetime.LocalDate
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -22,6 +22,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateChallengeScreen(
+    uiState: CreateUiState,
     onCreate: (teamName: String, skillLevel: String, location: String, date: LocalDate) -> Unit,
     onBack: () -> Unit
 ) {
@@ -178,6 +179,16 @@ fun CreateChallengeScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            if (uiState is CreateUiState.Error) {
+                Text(
+                    text = uiState.message,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+            }
+
+            val isLoading = uiState is CreateUiState.Loading
             Button(
                 onClick = {
                     onCreate(
@@ -187,7 +198,7 @@ fun CreateChallengeScreen(
                         parsedDate!!
                     )
                 },
-                enabled = isValid,
+                enabled = isValid && !isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
@@ -197,10 +208,18 @@ fun CreateChallengeScreen(
                     contentColor = Color.White
                 )
             ) {
-                Text(
-                    "Create Challenge",
-                    style = MaterialTheme.typography.titleMedium
-                )
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(
+                        "Create Challenge",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
             }
             }
         }

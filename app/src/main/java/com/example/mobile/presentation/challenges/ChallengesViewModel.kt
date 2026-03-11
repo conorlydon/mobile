@@ -9,12 +9,13 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.mobile.data.local.AppDatabase
 import com.example.mobile.data.repository.ChallengeRepository
 import com.example.mobile.data.repository.DefaultChallengeRepository
-import com.example.mobile.domain.challenges.Challenge
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
@@ -23,31 +24,57 @@ class ChallengesViewModel(
     private val repository: ChallengeRepository
 ) : ViewModel() {
 
-    val activeChallenges: StateFlow<List<Challenge>> = repository.observeActiveChallenges()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    // true initially so the UI shows a spinner before the first refresh completes
+    private val _isRefreshing = MutableStateFlow(true)
+    private val _dashboardError = MutableStateFlow<String?>(null)
 
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+    // combine merges three flows into one — re-emits whenever any of them changes
+    val dashboardUiState: StateFlow<DashboardUiState> = combine(
+        repository.observeActiveChallenges(),
+        _isRefreshing,
+        _dashboardError
+    ) { challenges, isRefreshing, error ->
+        when {
+            challenges.isNotEmpty() -> DashboardUiState.Success(challenges)
+            isRefreshing -> DashboardUiState.Loading
+            error != null -> DashboardUiState.Error(error)
+            else -> DashboardUiState.Empty
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardUiState.Loading)
+
+    private val _createUiState = MutableStateFlow<CreateUiState>(CreateUiState.Idle)
+    val createUiState: StateFlow<CreateUiState> = _createUiState.asStateFlow()
 
     init {
         refreshChallenges()
     }
 
-    fun observeChallenge(challengeId: String): Flow<Challenge?> {
-        return repository.observeChallenge(challengeId)
+    // Maps the nullable Flow from the repo into a typed DetailUiState
+    fun observeChallenge(challengeId: String): Flow<DetailUiState> {
+        return repository.observeChallenge(challengeId).map { challenge ->
+            if (challenge != null) DetailUiState.Success(challenge)
+            else DetailUiState.Error("Challenge not found")
+        }
     }
 
     fun refreshChallenges() {
+        _isRefreshing.value = true
+        _dashboardError.value = null
         viewModelScope.launch {
+            // runCatching is a clean alternative to try/catch for coroutine operations
             runCatching { repository.refreshChallenges() }
-                .onFailure { 
-                    _errorMessage.value = when {
-                        it.message?.contains("network", ignoreCase = true) == true -> "Unable to connect. Please check your internet connection and try again."
-                        it.message?.contains("timeout", ignoreCase = true) == true -> "Connection timed out. Please try again."
-                        it.message?.contains("unauthorized", ignoreCase = true) == true -> "Please login to view challenges."
+                .onFailure {
+                    _dashboardError.value = when {
+                        it.message?.contains("network", ignoreCase = true) == true ->
+                            "Unable to connect. Please check your internet connection and try again."
+                        it.message?.contains("timeout", ignoreCase = true) == true ->
+                            "Connection timed out. Please try again."
+                        it.message?.contains("unauthorized", ignoreCase = true) == true ->
+                            "Please login to view challenges."
                         else -> "Couldn't load challenges. Please pull down to refresh."
                     }
                 }
+            _isRefreshing.value = false
         }
     }
 
@@ -55,9 +82,9 @@ class ChallengesViewModel(
         teamName: String,
         skillLevel: String,
         location: String,
-        date: LocalDate,
-        onSuccess: () -> Unit
+        date: LocalDate
     ) {
+        _createUiState.value = CreateUiState.Loading
         viewModelScope.launch {
             runCatching {
                 repository.createChallenge(
@@ -67,20 +94,30 @@ class ChallengesViewModel(
                     date = date
                 )
             }.onSuccess {
-                onSuccess()
+                _createUiState.value = CreateUiState.Success
             }.onFailure {
-                _errorMessage.value = when {
-                    teamName.isBlank() -> "Please enter a team name"
-                    skillLevel.isBlank() -> "Please enter a skill level"
-                    location.isBlank() -> "Please enter a location"
-                    it.message?.contains("network", ignoreCase = true) == true -> "Unable to connect. Please check your internet connection and try again."
-                    it.message?.contains("exists", ignoreCase = true) == true -> "A challenge with these details already exists."
-                    else -> "Couldn't create challenge. Please try again."
-                }
+                _createUiState.value = CreateUiState.Error(
+                    when {
+                        teamName.isBlank() -> "Please enter a team name"
+                        skillLevel.isBlank() -> "Please enter a skill level"
+                        location.isBlank() -> "Please enter a location"
+                        it.message?.contains("network", ignoreCase = true) == true ->
+                            "Unable to connect. Please check your internet connection and try again."
+                        it.message?.contains("exists", ignoreCase = true) == true ->
+                            "A challenge with these details already exists."
+                        else -> "Couldn't create challenge. Please try again."
+                    }
+                )
             }
         }
     }
 
+    // Called after navigating away from create screen so state doesn't persist on re-entry
+    fun resetCreateState() {
+        _createUiState.value = CreateUiState.Idle
+    }
+
+    // Factory manually wires dependencies since we're not using a DI framework
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {

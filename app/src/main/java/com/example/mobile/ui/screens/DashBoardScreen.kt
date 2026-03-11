@@ -9,24 +9,26 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.mobile.domain.challenges.Challenge
 import com.example.mobile.domain.challenges.display
 import com.example.mobile.MetricsService
+import com.example.mobile.presentation.challenges.DashboardUiState
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
-    challenges: List<Challenge>,
+    uiState: DashboardUiState,
     onNavigateToCreate: () -> Unit,
     onViewDetails: (String) -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onRetry: () -> Unit
 ) {
-
     val scope = rememberCoroutineScope()
 
+    // Runs once when the screen enters composition
     LaunchedEffect(Unit) {
         MetricsService.track("dashboard_viewed")
     }
@@ -51,22 +53,60 @@ fun DashboardScreen(
             }
         }
     ) { padding ->
-
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .padding(padding)
-                .padding(16.dp)
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-            items(challenges) { challenge ->
-                ChallengeCard(challenge, onViewDetails)
+            // Each branch renders a different UI for the corresponding state
+            when (uiState) {
+                is DashboardUiState.Loading -> {
+                    CircularProgressIndicator()
+                }
+
+                is DashboardUiState.Empty -> {
+                    Text(
+                        text = "No challenges available yet.\nTap + to create one!",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+
+                is DashboardUiState.Error -> {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = uiState.message,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Button(onClick = onRetry) {
+                            Text("Retry")
+                        }
+                    }
+                }
+
+                is DashboardUiState.Success -> {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp)
+                    ) {
+                        items(uiState.challenges) { challenge ->
+                            ChallengeCard(challenge, onViewDetails)
+                        }
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-fun ChallengeCard(challenge: Challenge, onViewDetails: (String) -> Unit) {
-
+fun ChallengeCard(challenge: com.example.mobile.domain.challenges.Challenge, onViewDetails: (String) -> Unit) {
     val scope = rememberCoroutineScope()
 
     Card(
@@ -75,16 +115,12 @@ fun ChallengeCard(challenge: Challenge, onViewDetails: (String) -> Unit) {
             .padding(vertical = 8.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-
             Text(challenge.teamName, style = MaterialTheme.typography.titleMedium)
-
             Spacer(modifier = Modifier.height(4.dp))
             Text("Level: ${challenge.skillLevel}")
             Text("Location: ${challenge.location}")
             Text("Date: ${challenge.date.display()}")
-
             Spacer(modifier = Modifier.height(8.dp))
-
             Button(onClick = {
                 scope.launch { MetricsService.track("view_challenge_tapped") }
                 onViewDetails(challenge.id)

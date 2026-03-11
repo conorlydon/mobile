@@ -1,8 +1,8 @@
 package com.example.mobile.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -13,6 +13,8 @@ import androidx.navigation.navArgument
 import androidx.navigation.NavType
 import com.example.mobile.SupabaseClient
 import com.example.mobile.presentation.challenges.ChallengesViewModel
+import com.example.mobile.presentation.challenges.CreateUiState
+import com.example.mobile.presentation.challenges.DetailUiState
 import com.example.mobile.ui.screens.ChallengeDetailScreen
 import com.example.mobile.ui.screens.CreateChallengeScreen
 import com.example.mobile.ui.screens.DashboardScreen
@@ -34,8 +36,6 @@ fun AppNavGraph(navController: NavHostController) {
     } else {
         Routes.LOGIN
     }
-
-    val activeChallenges by challengesViewModel.activeChallenges.collectAsStateWithLifecycle()
 
     NavHost(
         navController = navController,
@@ -71,8 +71,9 @@ fun AppNavGraph(navController: NavHostController) {
         }
 
         composable(Routes.DASHBOARD) {
+            val dashboardUiState by challengesViewModel.dashboardUiState.collectAsStateWithLifecycle()
             DashboardScreen(
-                challenges = activeChallenges,
+                uiState = dashboardUiState,
                 onNavigateToCreate = {
                     navController.navigate(Routes.CREATE_CHALLENGE)
                 },
@@ -86,7 +87,8 @@ fun AppNavGraph(navController: NavHostController) {
                             popUpTo(0)
                         }
                     }
-                }
+                },
+                onRetry = { challengesViewModel.refreshChallenges() }
             )
         }
 
@@ -100,31 +102,31 @@ fun AppNavGraph(navController: NavHostController) {
                 return@composable
             }
 
-            val challenge by challengesViewModel.observeChallenge(challengeId)
-                .collectAsStateWithLifecycle(initialValue = null)
+            val detailUiState by challengesViewModel.observeChallenge(challengeId)
+                .collectAsStateWithLifecycle(initialValue = DetailUiState.Loading)
 
-            challenge?.let {
-                ChallengeDetailScreen(
-                    challenge = it,
-                    onBack = { navController.popBackStack() }
-                )
-            } ?: Text("Challenge not found", modifier = Modifier.fillMaxSize())
+            ChallengeDetailScreen(
+                uiState = detailUiState,
+                onBack = { navController.popBackStack() }
+            )
         }
 
         composable(Routes.CREATE_CHALLENGE) {
-            CreateChallengeScreen(
-                onCreate = { teamName, skillLevel, location, date ->
-                    challengesViewModel.createChallenge(
-                        teamName = teamName,
-                        skillLevel = skillLevel,
-                        location = location,
-                        date = date,
-                        onSuccess = { navController.popBackStack() }
-                    )
-                },
-                onBack = {
+            val createUiState by challengesViewModel.createUiState.collectAsStateWithLifecycle()
+
+            LaunchedEffect(createUiState) {
+                if (createUiState is CreateUiState.Success) {
+                    challengesViewModel.resetCreateState()
                     navController.popBackStack()
                 }
+            }
+
+            CreateChallengeScreen(
+                uiState = createUiState,
+                onCreate = { teamName, skillLevel, location, date ->
+                    challengesViewModel.createChallenge(teamName, skillLevel, location, date)
+                },
+                onBack = { navController.popBackStack() }
             )
         }
     }

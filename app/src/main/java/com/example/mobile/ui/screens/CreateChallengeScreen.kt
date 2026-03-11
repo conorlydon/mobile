@@ -2,7 +2,6 @@ package com.example.mobile.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -10,10 +9,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.mobile.presentation.challenges.CreateUiState
+import com.example.mobile.ui.theme.MobileThemeExtras
 import kotlinx.datetime.LocalDate
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -64,11 +62,7 @@ fun CreateChallengeScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Create Challenge") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF2E7D32),
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                ),
+                colors = MobileThemeExtras.topAppBarColors(),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -80,15 +74,7 @@ fun CreateChallengeScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color(0xFFE8F5E8),
-                            Color(0xFFF1F8E9),
-                            Color.White
-                        )
-                    )
-                )
+                .background(MobileThemeExtras.screenBackgroundBrush())
         ) {
             Column(
                 modifier = Modifier
@@ -103,11 +89,7 @@ fun CreateChallengeScreen(
                 label = { Text("Team Name") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF2E7D32),
-                    focusedLabelColor = Color(0xFF2E7D32),
-                    cursorColor = Color(0xFF2E7D32)
-                )
+                colors = MobileThemeExtras.formFieldColors()
             )
             
             // Skill Level Dropdown
@@ -126,11 +108,7 @@ fun CreateChallengeScreen(
                     modifier = Modifier
                         .menuAnchor()
                         .fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF2E7D32),
-                        focusedLabelColor = Color(0xFF2E7D32),
-                        cursorColor = Color(0xFF2E7D32)
-                    )
+                    colors = MobileThemeExtras.formFieldColors()
                 )
                 ExposedDropdownMenu(
                     expanded = isSkillLevelDropdownExpanded,
@@ -153,11 +131,7 @@ fun CreateChallengeScreen(
                 label = { Text("Location") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF2E7D32),
-                    focusedLabelColor = Color(0xFF2E7D32),
-                    cursorColor = Color(0xFF2E7D32)
-                )
+                colors = MobileThemeExtras.formFieldColors()
             )
             OutlinedTextField(
                 value = date,
@@ -168,13 +142,7 @@ fun CreateChallengeScreen(
                 singleLine = true,
                 isError = dateError != null,
                 supportingText = dateError?.let { error -> { Text(error) } },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF2E7D32),
-                    focusedLabelColor = Color(0xFF2E7D32),
-                    cursorColor = Color(0xFF2E7D32),
-                    errorBorderColor = Color(0xFFD32F2F),
-                    errorLabelColor = Color(0xFFD32F2F)
-                )
+                colors = MobileThemeExtras.formFieldColors()
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -202,15 +170,12 @@ fun CreateChallengeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
-                    .clip(RoundedCornerShape(12.dp)),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF2E7D32),
-                    contentColor = Color.White
-                )
+                    .clip(MobileThemeExtras.shapes.actionButton),
+                colors = MobileThemeExtras.primaryButtonColors()
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
-                        color = Color.White,
+                        color = MobileThemeExtras.colors.brandOnPrimary,
                         modifier = Modifier.size(24.dp),
                         strokeWidth = 2.dp
                     )

@@ -3,7 +3,6 @@ package com.example.mobile.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
@@ -14,7 +13,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -22,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.example.mobile.domain.challenges.Challenge
 import com.example.mobile.domain.challenges.display
 import com.example.mobile.presentation.challenges.DetailUiState
+import com.example.mobile.ui.theme.MobileThemeExtras
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,17 +70,6 @@ private fun ChallengeDetailContent(
     var showContactDialog by remember { mutableStateOf(false) }
     var showJoinDialog by remember { mutableStateOf(false) }
 
-    fun getSkillLevelColor(skillLevel: String): Color {
-        return when {
-            skillLevel.startsWith("U") -> Color(0xFF1976D2) // Blue for youth
-            skillLevel == "Senior" -> Color(0xFFD32F2F) // Red for senior
-            skillLevel == "Intermediate" -> Color(0xFFFF9800) // Orange for intermediate
-            skillLevel == "Minor" -> Color(0xFF4CAF50) // Green for minor
-            skillLevel == "Casual" -> Color(0xFF9C27B0) // Purple for casual
-            else -> Color(0xFF757575) // Gray for unknown
-        }
-    }
-
     if (showContactDialog) {
         AlertDialog(
             onDismissRequest = { showContactDialog = false },
@@ -122,11 +110,7 @@ private fun ChallengeDetailContent(
         topBar = {
             TopAppBar(
                 title = { Text(challenge.teamName) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF2E7D32),
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                ),
+                colors = MobileThemeExtras.topAppBarColors(),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -138,15 +122,7 @@ private fun ChallengeDetailContent(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color(0xFFE8F5E8),
-                            Color(0xFFF1F8E9),
-                            Color.White
-                        )
-                    )
-                )
+                .background(MobileThemeExtras.screenBackgroundBrush())
         ) {
             Column(
                 modifier = Modifier
@@ -158,9 +134,7 @@ private fun ChallengeDetailContent(
                 // Team Name and Skill Level Header
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    ),
+                    colors = MobileThemeExtras.surfaceCardColors(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
                     Column(
@@ -171,20 +145,20 @@ private fun ChallengeDetailContent(
                             text = challenge.teamName,
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1B5E20)
+                            color = MobileThemeExtras.colors.heading
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         
                         // Skill Level Badge
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(getSkillLevelColor(challenge.skillLevel))
+                                .clip(MobileThemeExtras.shapes.badge)
+                                .background(MobileThemeExtras.skillLevelColor(challenge.skillLevel))
                                 .padding(horizontal = 16.dp, vertical = 8.dp)
                         ) {
                             Text(
                                 text = challenge.skillLevel,
-                                color = Color.White,
+                                color = MobileThemeExtras.colors.brandOnPrimary,
                                 fontWeight = FontWeight.Medium
                             )
                         }
@@ -196,21 +170,21 @@ private fun ChallengeDetailContent(
                     icon = Icons.Default.Star,
                     title = "Skill Level",
                     content = challenge.skillLevel,
-                    iconColor = getSkillLevelColor(challenge.skillLevel)
+                    iconColor = MobileThemeExtras.skillLevelColor(challenge.skillLevel)
                 )
                 
                 InfoCard(
                     icon = Icons.Default.LocationOn,
                     title = "Location",
                     content = challenge.location,
-                    iconColor = Color(0xFFE65100)
+                    iconColor = MobileThemeExtras.colors.locationAccent
                 )
                 
                 InfoCard(
                     icon = Icons.Default.Info,
                     title = "Date",
                     content = challenge.date.display(),
-                    iconColor = Color(0xFF6A1B9A)
+                    iconColor = MobileThemeExtras.colors.dateAccent
                 )
                 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -225,11 +199,8 @@ private fun ChallengeDetailContent(
                         modifier = Modifier
                             .weight(1f)
                             .height(50.dp)
-                            .clip(RoundedCornerShape(12.dp)),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF2E7D32),
-                            contentColor = Color.White
-                        )
+                            .clip(MobileThemeExtras.shapes.actionButton),
+                        colors = MobileThemeExtras.primaryButtonColors()
                     ) {
                         Text("Join Challenge", fontWeight = FontWeight.Medium)
                     }
@@ -239,11 +210,9 @@ private fun ChallengeDetailContent(
                         modifier = Modifier
                             .weight(1f)
                             .height(50.dp)
-                            .clip(RoundedCornerShape(12.dp)),
-                        border = BorderStroke(2.dp, Color(0xFF2E7D32)),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = Color(0xFF2E7D32)
-                        )
+                            .clip(MobileThemeExtras.shapes.actionButton),
+                        border = BorderStroke(2.dp, MobileThemeExtras.colors.brandPrimary),
+                        colors = MobileThemeExtras.outlinedButtonColors()
                     ) {
                         Text("Contact Team", fontWeight = FontWeight.Medium)
                     }
@@ -262,9 +231,7 @@ fun InfoCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
+        colors = MobileThemeExtras.surfaceCardColors(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -277,7 +244,7 @@ fun InfoCard(
             Box(
                 modifier = Modifier
                     .size(48.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(MobileThemeExtras.shapes.iconContainer)
                     .background(iconColor.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
@@ -293,7 +260,7 @@ fun InfoCard(
                 Text(
                     text = title,
                     style = MaterialTheme.typography.labelMedium,
-                    color = Color(0xFF757575)
+                    color = MobileThemeExtras.colors.mutedText
                 )
                 Text(
                     text = content,

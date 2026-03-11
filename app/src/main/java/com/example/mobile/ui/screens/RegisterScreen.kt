@@ -13,6 +13,7 @@ import com.example.mobile.MetricsService
 import com.example.mobile.SupabaseClient
 import com.example.mobile.ui.theme.MobileThemeExtras
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
     onRegisterSuccess: () -> Unit,
@@ -24,6 +25,13 @@ fun RegisterScreen(
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
+    var isSkillLevelDropdownExpanded by remember { mutableStateOf(false) }
+
+    val skillLevels = listOf(
+        "Senior", "Intermediate", "Minor",
+        "U17", "U16", "U15", "U14", "U13", "U12", "U11", "U10", "U9",
+        "Casual"
+    )
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -49,13 +57,40 @@ fun RegisterScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                OutlinedTextField(
-                    value = skillLevel,
-                    onValueChange = { skillLevel = it },
-                    label = { Text("Skill Level") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = MobileThemeExtras.formFieldColors()
-                )
+
+                ExposedDropdownMenuBox(
+                    expanded = isSkillLevelDropdownExpanded,
+                    onExpandedChange = { isSkillLevelDropdownExpanded = it }
+                ) {
+                    OutlinedTextField(
+                        value = skillLevel,
+                        onValueChange = { },
+                        readOnly = true,
+                        label = { Text("Skill Level") },
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = isSkillLevelDropdownExpanded)
+                        },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth(),
+                        colors = MobileThemeExtras.formFieldColors()
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = isSkillLevelDropdownExpanded,
+                        onDismissRequest = { isSkillLevelDropdownExpanded = false }
+                    ) {
+                        skillLevels.forEach { level ->
+                            DropdownMenuItem(
+                                text = { Text(level) },
+                                onClick = {
+                                    skillLevel = level
+                                    isSkillLevelDropdownExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
                 Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedTextField(

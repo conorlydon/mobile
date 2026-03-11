@@ -1,6 +1,7 @@
 package com.example.mobile.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -11,10 +12,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.example.mobile.domain.challenges.display
 import com.example.mobile.MetricsService
 import com.example.mobile.presentation.challenges.DashboardUiState
+import com.example.mobile.ui.theme.MobileThemeExtras
+import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,18 +41,26 @@ fun DashboardScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Open Challenges") },
+                colors = MobileThemeExtras.topAppBarColors(),
                 actions = {
-                    TextButton(onClick = onLogout) {
+                    TextButton(
+                        onClick = onLogout,
+                        colors = ButtonDefaults.textButtonColors(contentColor = Color.White)
+                    ) {
                         Text("Logout")
                     }
                 }
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = {
-                scope.launch { MetricsService.track("create_challenge_tapped") }
-                onNavigateToCreate()
-            }) {
+            FloatingActionButton(
+                onClick = {
+                    scope.launch { MetricsService.track("create_challenge_tapped") }
+                    onNavigateToCreate()
+                },
+                containerColor = MobileThemeExtras.colors.brandPrimary,
+                contentColor = MobileThemeExtras.colors.brandOnPrimary
+            ) {
                 Icon(Icons.Default.Add, contentDescription = "Create")
             }
         }
@@ -56,7 +68,8 @@ fun DashboardScreen(
         Box(
             modifier = Modifier
                 .padding(padding)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .background(MobileThemeExtras.screenBackgroundBrush()),
             contentAlignment = Alignment.Center
         ) {
             // Each branch renders a different UI for the corresponding state
@@ -83,7 +96,11 @@ fun DashboardScreen(
                             text = uiState.message,
                             style = MaterialTheme.typography.bodyLarge
                         )
-                        Button(onClick = onRetry) {
+                        Button(
+                            onClick = onRetry,
+                            colors = MobileThemeExtras.primaryButtonColors(),
+                            modifier = Modifier.clip(MobileThemeExtras.shapes.actionButton)
+                        ) {
                             Text("Retry")
                         }
                     }
@@ -112,19 +129,29 @@ fun ChallengeCard(challenge: com.example.mobile.domain.challenges.Challenge, onV
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
+            .padding(vertical = 8.dp),
+        colors = MobileThemeExtras.surfaceCardColors(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(challenge.teamName, style = MaterialTheme.typography.titleMedium)
+            Text(
+                challenge.teamName,
+                style = MaterialTheme.typography.titleMedium,
+                color = MobileThemeExtras.colors.heading
+            )
             Spacer(modifier = Modifier.height(4.dp))
             Text("Level: ${challenge.skillLevel}")
             Text("Location: ${challenge.location}")
             Text("Date: ${challenge.date.display()}")
             Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = {
-                scope.launch { MetricsService.track("view_challenge_tapped") }
-                onViewDetails(challenge.id)
-            }) {
+            Button(
+                onClick = {
+                    scope.launch { MetricsService.track("view_challenge_tapped") }
+                    onViewDetails(challenge.id)
+                },
+                colors = MobileThemeExtras.primaryButtonColors(),
+                modifier = Modifier.clip(MobileThemeExtras.shapes.actionButton)
+            ) {
                 Text("View Details")
             }
         }

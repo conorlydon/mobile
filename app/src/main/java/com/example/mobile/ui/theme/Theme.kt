@@ -140,6 +140,11 @@ object MobileThemeExtras {
     )
 
     @Composable
+    fun textButtonColors(): ButtonColors = ButtonDefaults.textButtonColors(
+        contentColor = colors.brandPrimary,
+    )
+
+    @Composable
     fun outlinedButtonColors(): ButtonColors = ButtonDefaults.outlinedButtonColors(
         contentColor = colors.brandPrimary,
     )

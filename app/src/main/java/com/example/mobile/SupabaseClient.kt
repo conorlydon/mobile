@@ -10,6 +10,7 @@ import io.github.jan.supabase.postgrest.postgrest
 import com.example.mobile.domain.challenges.Challenge
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import java.util.UUID
 
 object SupabaseClient {
     // Replace with your Supabase project URL and anon key
@@ -75,6 +76,28 @@ object SupabaseClient {
                 put("location", challenge.location)
                 put("date", challenge.date.toString())
                 put("created_by_email", email)
+            }
+        )
+    }
+
+    suspend fun requestJoinChallenge(challenge: Challenge) {
+        val requesterEmail = supabase.auth.currentUserOrNull()?.email
+            ?: throw IllegalStateException("Authentication required to join a challenge")
+        val targetEmail = challenge.createdByEmail?.takeIf { it.isNotBlank() }
+            ?: throw IllegalStateException("Challenge owner contact is unavailable")
+
+        if (targetEmail.equals(requesterEmail, ignoreCase = true)) {
+            throw IllegalArgumentException("Challenge owner cannot join their own challenge")
+        }
+
+        postgrest.from("challenge_join_requests").insert(
+            buildJsonObject {
+                put("id", UUID.randomUUID().toString())
+                put("challenge_id", challenge.id)
+                put("challenge_team_name", challenge.teamName)
+                put("requester_email", requesterEmail)
+                put("target_email", targetEmail)
+                put("status", "pending")
             }
         )
     }

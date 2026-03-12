@@ -34,6 +34,10 @@ class DefaultChallengeRepository(
         }
     }
 
+    override suspend fun requestJoinChallenge(challenge: Challenge) {
+        SupabaseClient.requestJoinChallenge(challenge)
+    }
+
     override suspend fun createChallenge(
         teamName: String,
         skillLevel: String,

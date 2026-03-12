@@ -8,6 +8,7 @@ interface ChallengeRepository {
     fun observeActiveChallenges(): Flow<List<Challenge>>
     fun observeChallenge(challengeId: String): Flow<Challenge?>
     suspend fun refreshChallenges()
+    suspend fun requestJoinChallenge(challenge: Challenge)
     suspend fun createChallenge(
         teamName: String,
         skillLevel: String,

@@ -21,11 +21,15 @@ import com.example.mobile.domain.challenges.Challenge
 import com.example.mobile.domain.challenges.display
 import com.example.mobile.presentation.challenges.DetailUiState
 import com.example.mobile.ui.theme.MobileThemeExtras
+import com.example.mobile.presentation.challenges.JoinChallengeUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChallengeDetailScreen(
     uiState: DetailUiState,
+    joinUiState: JoinChallengeUiState,
+    onJoinChallenge: (Challenge) -> Unit,
+    onJoinResultShown: () -> Unit,
     onBack: () -> Unit
 ) {
     when (uiState) {
@@ -57,7 +61,13 @@ fun ChallengeDetailScreen(
             }
             return
         }
-        is DetailUiState.Success -> ChallengeDetailContent(uiState.challenge, onBack)
+        is DetailUiState.Success -> ChallengeDetailContent(
+            challenge = uiState.challenge,
+            joinUiState = joinUiState,
+            onJoinChallenge = onJoinChallenge,
+            onJoinResultShown = onJoinResultShown,
+            onBack = onBack
+        )
     }
 }
 
@@ -65,10 +75,21 @@ fun ChallengeDetailScreen(
 @Composable
 private fun ChallengeDetailContent(
     challenge: Challenge,
+    joinUiState: JoinChallengeUiState,
+    onJoinChallenge: (Challenge) -> Unit,
+    onJoinResultShown: () -> Unit,
     onBack: () -> Unit
 ) {
     var showContactDialog by remember { mutableStateOf(false) }
     var showJoinDialog by remember { mutableStateOf(false) }
+    var showResultDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(joinUiState) {
+        if (joinUiState is JoinChallengeUiState.Success || joinUiState is JoinChallengeUiState.Error) {
+            showJoinDialog = false
+            showResultDialog = true
+        }
+    }
 
     if (showContactDialog) {
         AlertDialog(
@@ -90,17 +111,48 @@ private fun ChallengeDetailContent(
             text = { Text("Are you sure you want to join this challenge? An email will be sent to ${challenge.teamName}.") },
             confirmButton = {
                 TextButton(
-                    onClick = { 
-                        showJoinDialog = false
-                        // TODO: Implement email sending functionality
-                    }
+                    onClick = { onJoinChallenge(challenge) },
+                    enabled = joinUiState !is JoinChallengeUiState.Loading
                 ) {
-                    Text("Join")
+                    Text(if (joinUiState is JoinChallengeUiState.Loading) "Sending..." else "Join")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showJoinDialog = false }) {
-                    Text("Cancel")
+                    TextButton(
+                        onClick = { showJoinDialog = false },
+                        enabled = joinUiState !is JoinChallengeUiState.Loading
+                    ) {
+                        Text("Cancel")
+                    }
+                }
+            }
+        )
+    }
+
+
+    if (showResultDialog) {
+        val resultMessage = when (joinUiState) {
+            is JoinChallengeUiState.Success -> joinUiState.message
+            is JoinChallengeUiState.Error -> joinUiState.message
+            else -> ""
+        }
+
+        AlertDialog(
+            onDismissRequest = {
+                showResultDialog = false
+                onJoinResultShown()
+            },
+            title = { Text("Join Challenge") },
+            text = { Text(resultMessage) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showResultDialog = false
+                        onJoinResultShown()
+                    }
+                ) {
+                    Text("OK")
                 }
             }
         )

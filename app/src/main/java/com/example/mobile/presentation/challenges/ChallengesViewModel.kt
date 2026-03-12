@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
+import com.example.mobile.domain.challenges.Challenge
 
 class ChallengesViewModel(
     private val repository: ChallengeRepository
@@ -43,6 +44,8 @@ class ChallengesViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardUiState.Loading)
 
     private val _createUiState = MutableStateFlow<CreateUiState>(CreateUiState.Idle)
+    private val _joinChallengeUiState = MutableStateFlow<JoinChallengeUiState>(JoinChallengeUiState.Idle)
+    val joinChallengeUiState: StateFlow<JoinChallengeUiState> = _joinChallengeUiState.asStateFlow()
     val createUiState: StateFlow<CreateUiState> = _createUiState.asStateFlow()
 
     init {
@@ -110,6 +113,39 @@ class ChallengesViewModel(
                 )
             }
         }
+    }
+
+    fun requestJoinChallenge(challenge: Challenge) {
+        _joinChallengeUiState.value = JoinChallengeUiState.Loading
+        viewModelScope.launch {
+            runCatching {
+                repository.requestJoinChallenge(challenge)
+            }.onSuccess {
+                _joinChallengeUiState.value = JoinChallengeUiState.Success(
+                    "Join request sent to ${challenge.teamName}."
+                )
+            }.onFailure {
+                _joinChallengeUiState.value = JoinChallengeUiState.Error(
+                    when {
+                        it.message?.contains("already", ignoreCase = true) == true ->
+                            "You already requested to join this challenge."
+                        it.message?.contains("auth", ignoreCase = true) == true ->
+                            "Please login to request this challenge."
+                        it.message?.contains("owner", ignoreCase = true) == true ->
+                            "You can't join your own challenge."
+                        it.message?.contains("contact", ignoreCase = true) == true ->
+                            "This challenge has no contact email yet."
+                        it.message?.contains("network", ignoreCase = true) == true ->
+                            "Unable to connect. Please check your internet and try again."
+                        else -> "Couldn't send your join request. Please try again."
+                    }
+                )
+            }
+        }
+    }
+
+    fun resetJoinChallengeState() {
+        _joinChallengeUiState.value = JoinChallengeUiState.Idle
     }
 
     // Called after navigating away from create screen so state doesn't persist on re-entry

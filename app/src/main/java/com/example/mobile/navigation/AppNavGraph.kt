@@ -123,9 +123,13 @@ fun AppNavGraph(navController: NavHostController) {
 
             val detailUiState by challengesViewModel.observeChallenge(challengeId)
                 .collectAsStateWithLifecycle(initialValue = DetailUiState.Loading)
+            val joinUiState by challengesViewModel.joinChallengeUiState.collectAsStateWithLifecycle()
 
             ChallengeDetailScreen(
                 uiState = detailUiState,
+                joinUiState = joinUiState,
+                onJoinChallenge = challengesViewModel::requestJoinChallenge,
+                onJoinResultShown = challengesViewModel::resetJoinChallengeState,
                 onBack = { navController.popBackStack() }
             )
         }

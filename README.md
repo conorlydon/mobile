@@ -49,6 +49,8 @@ The Background Sync is ran every 15 minutes after app startup as refreshChalleng
 
 Using `android.util.Log`. Filter by tag which are just equal to the file name in Logcat:
 
+- `MobileApplication` — WorkManager enqueued on startup
+- `DefaultChallengeRepository` — number of challenges fetched from Supabase
 - `ChallengeSyncWorker` — sync start, success, and retry on failure
 - `ChallengesViewModel` — errors in refresh, create, and join
 - `AuthViewModel` — errors in login, register, and logout

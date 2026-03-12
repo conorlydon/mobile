@@ -1,6 +1,7 @@
 package com.example.mobile
 
 import android.app.Application
+import android.util.Log
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
@@ -20,5 +21,10 @@ class MobileApplication : Application() {
                 .setConstraints(Constraints(requiredNetworkType = NetworkType.CONNECTED))
                 .build()
         )
+        Log.d(TAG, "Challenge sync WorkManager enqueued")
+    }
+
+    companion object {
+        private const val TAG = "MobileApplication"
     }
 }

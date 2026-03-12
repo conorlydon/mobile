@@ -1,5 +1,6 @@
 package com.example.mobile.data.repository
 
+import android.util.Log
 import androidx.room.withTransaction
 import com.example.mobile.SupabaseClient
 import com.example.mobile.data.local.AppDatabase
@@ -28,6 +29,7 @@ class DefaultChallengeRepository(
 
     override suspend fun refreshChallenges() {
         val remote = SupabaseClient.fetchChallenges()
+        Log.d(TAG, "Fetched ${remote.size} challenges from Supabase")
         database.withTransaction {
             challengeDao.clearAll()
             challengeDao.upsertAll(remote.map { it.toEntity() })
@@ -55,6 +57,9 @@ class DefaultChallengeRepository(
 
         SupabaseClient.insertChallenge(challenge)
         challengeDao.upsert(challenge.toEntity())
+    }
+    companion object {
+        private const val TAG = "DefaultChallengeRepository"
     }
 }
 

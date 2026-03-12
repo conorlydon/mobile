@@ -15,7 +15,6 @@ import kotlinx.serialization.json.put
 import java.util.UUID
 
 object SupabaseClient {
-    // Replace with your Supabase project URL and anon key
     private val supabase= createSupabaseClient(
         supabaseUrl = BuildConfig.SUPABASE_URL,
         supabaseKey = BuildConfig.SUPABASE_KEY

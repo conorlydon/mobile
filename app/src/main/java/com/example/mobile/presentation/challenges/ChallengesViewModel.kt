@@ -1,6 +1,7 @@
 package com.example.mobile.presentation.challenges
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -67,6 +68,7 @@ class ChallengesViewModel(
             // runCatching is a clean alternative to try/catch for coroutine operations
             runCatching { repository.refreshChallenges() }
                 .onFailure {
+                    Log.e(TAG, "refreshChallenges failed", it)
                     _dashboardError.value = when {
                         it.message?.contains("network", ignoreCase = true) == true ->
                             "Unable to connect. Please check your internet connection and try again."
@@ -99,6 +101,7 @@ class ChallengesViewModel(
             }.onSuccess {
                 _createUiState.value = CreateUiState.Success
             }.onFailure {
+                Log.e(TAG, "createChallenge failed", it)
                 _createUiState.value = CreateUiState.Error(
                     when {
                         teamName.isBlank() -> "Please enter a team name"
@@ -125,6 +128,7 @@ class ChallengesViewModel(
                     "Join request sent to ${challenge.teamName}."
                 )
             }.onFailure {
+                Log.e(TAG, "requestJoinChallenge failed", it)
                 _joinChallengeUiState.value = JoinChallengeUiState.Error(
                     when {
                         it.message?.contains("already", ignoreCase = true) == true ->
@@ -155,6 +159,7 @@ class ChallengesViewModel(
 
     // Factory manually wires dependencies since we're not using a DI framework
     companion object {
+        private const val TAG = "ChallengesViewModel"
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as Application

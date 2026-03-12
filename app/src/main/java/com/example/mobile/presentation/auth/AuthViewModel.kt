@@ -1,5 +1,6 @@
 package com.example.mobile.presentation.auth
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -35,6 +36,7 @@ class AuthViewModel(
             }.onSuccess {
                 _loginUiState.value = AuthUiState.Success
             }.onFailure { error ->
+                Log.e(TAG, "login failed", error)
                 _loginUiState.value = AuthUiState.Error(loginErrorMessage(email, password, error))
             }
         }
@@ -58,6 +60,7 @@ class AuthViewModel(
             }.onSuccess {
                 _registerUiState.value = AuthUiState.Success
             }.onFailure { error ->
+                Log.e(TAG, "register failed", error)
                 _registerUiState.value = AuthUiState.Error(
                     registerErrorMessage(email, password, skillLevel, eircode, error)
                 )
@@ -71,6 +74,7 @@ class AuthViewModel(
             runCatching { repository.logout() }
                 .onSuccess { _logoutUiState.value = AuthUiState.Success }
                 .onFailure { error ->
+                    Log.e(TAG, "logout failed", error)
                     _logoutUiState.value = AuthUiState.Error(
                         error.message ?: "Couldn't log out. Please try again."
                     )
@@ -91,6 +95,7 @@ class AuthViewModel(
     }
 
     companion object {
+        private const val TAG = "AuthViewModel"
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 AuthViewModel(DefaultAuthRepository())

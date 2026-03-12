@@ -97,13 +97,16 @@ private fun ChallengeDetailContent(
             title = { Text("Contact ${challenge.teamName}") },
             text = { Text(challenge.createdByEmail ?: "No contact info available") },
             confirmButton = {
-                TextButton(onClick = { showContactDialog = false }) {
+                TextButton(
+                    onClick = { showContactDialog = false },
+                    colors = MobileThemeExtras.textButtonColors()
+                ) {
                     Text("Close")
                 }
             }
         )
     }
-    
+
     if (showJoinDialog) {
         AlertDialog(
             onDismissRequest = { showJoinDialog = false },
@@ -112,24 +115,23 @@ private fun ChallengeDetailContent(
             confirmButton = {
                 TextButton(
                     onClick = { onJoinChallenge(challenge) },
-                    enabled = joinUiState !is JoinChallengeUiState.Loading
+                    enabled = joinUiState !is JoinChallengeUiState.Loading,
+                    colors = MobileThemeExtras.textButtonColors()
                 ) {
                     Text(if (joinUiState is JoinChallengeUiState.Loading) "Sending..." else "Join")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showJoinDialog = false }) {
-                    TextButton(
-                        onClick = { showJoinDialog = false },
-                        enabled = joinUiState !is JoinChallengeUiState.Loading
-                    ) {
-                        Text("Cancel")
-                    }
+                TextButton(
+                    onClick = { showJoinDialog = false },
+                    enabled = joinUiState !is JoinChallengeUiState.Loading,
+                    colors = MobileThemeExtras.textButtonColors()
+                ) {
+                    Text("Cancel")
                 }
             }
         )
     }
-
 
     if (showResultDialog) {
         val resultMessage = when (joinUiState) {
@@ -150,7 +152,8 @@ private fun ChallengeDetailContent(
                     onClick = {
                         showResultDialog = false
                         onJoinResultShown()
-                    }
+                    },
+                    colors = MobileThemeExtras.textButtonColors()
                 ) {
                     Text("OK")
                 }

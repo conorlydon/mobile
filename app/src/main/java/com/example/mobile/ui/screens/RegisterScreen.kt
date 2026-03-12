@@ -8,32 +8,30 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
 import com.example.mobile.MetricsService
-import com.example.mobile.SupabaseClient
+import com.example.mobile.presentation.auth.AuthUiState
 import com.example.mobile.ui.theme.MobileThemeExtras
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
-    onRegisterSuccess: () -> Unit,
+    uiState: AuthUiState,
+    onRegister: (email: String, password: String, skillLevel: String, eircode: String) -> Unit,
     onNavigateToLogin: () -> Unit
 ) {
     var skillLevel by remember { mutableStateOf("") }
     var eircode by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
     var isSkillLevelDropdownExpanded by remember { mutableStateOf(false) }
+    val isLoading = uiState is AuthUiState.Loading
+    val errorMessage = (uiState as? AuthUiState.Error)?.message.orEmpty()
 
     val skillLevels = listOf(
         "Senior", "Intermediate", "Minor",
         "U17", "U16", "U15", "U14", "U13", "U12", "U11", "U10", "U9",
         "Casual"
     )
-
-    val coroutineScope = rememberCoroutineScope()
 
     Scaffold { padding ->
         Box(
@@ -129,37 +127,7 @@ fun RegisterScreen(
 
                 Button(
                     onClick = {
-                        coroutineScope.launch {
-                            isLoading = true
-                            errorMessage = ""
-
-                            try {
-                                SupabaseClient.registerTeam(
-                                    email = email.trim(),
-                                    password = password,
-                                    skillLevel = skillLevel.trim(),
-                                    eircode = eircode.trim()
-                                )
-                                MetricsService.track("club_joined")
-                                onRegisterSuccess()
-
-                            } catch (e: Exception) {
-                                errorMessage = when {
-                                    skillLevel.isBlank() -> "Please enter your team's skill level"
-                                    eircode.isBlank() -> "Please enter your eircode"
-                                    email.isBlank() -> "Please enter your email address"
-                                    password.isBlank() -> "Please enter a password"
-                                    !email.contains("@") -> "Please enter a valid email address"
-                                    password.length < 6 -> "Password must be at least 6 characters long"
-                                    eircode.length < 3 -> "Please enter a valid eircode"
-                                    e.message?.contains("already registered", ignoreCase = true) == true -> "An account with this email already exists. Please login instead."
-                                    e.message?.contains("weak password", ignoreCase = true) == true -> "Password is too weak. Please choose a stronger password."
-                                    else -> "Registration failed. Please check your information and try again."
-                                }
-                            } finally {
-                                isLoading = false
-                            }
-                        }
+                        onRegister(email.trim(), password, skillLevel.trim(), eircode.trim())
                     },
                     modifier = Modifier
                         .fillMaxWidth()

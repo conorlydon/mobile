@@ -10,22 +10,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.mobile.MetricsService
-import com.example.mobile.SupabaseClient
+import com.example.mobile.presentation.auth.AuthUiState
 import com.example.mobile.ui.theme.MobileThemeExtras
-import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: () -> Unit,
+    uiState: AuthUiState,
+    onLogin: (email: String, password: String) -> Unit,
     onNavigateToRegister: () -> Unit
 ) {
-
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
-
-    val coroutineScope = rememberCoroutineScope()
+    val isLoading = uiState is AuthUiState.Loading
+    val errorMessage = (uiState as? AuthUiState.Error)?.message.orEmpty()
 
     LaunchedEffect(Unit) {
         MetricsService.track("login_viewed")
@@ -81,30 +78,7 @@ fun LoginScreen(
 
                 Button(
                     onClick = {
-                        coroutineScope.launch {
-                            isLoading = true
-                            errorMessage = ""
-
-                            try {
-                                SupabaseClient.signInWithEmail(
-                                    email = email.trim(),
-                                    password = password
-                                )
-                                onLoginSuccess()
-                            } catch (e: Exception) {
-                                errorMessage = when {
-                                    email.isBlank() -> "Please enter your email address"
-                                    password.isBlank() -> "Please enter your password"
-                                    !email.contains("@") -> "Please enter a valid email address"
-                                    password.length < 6 -> "Password must be at least 6 characters long"
-                                    e.message?.contains("Invalid login", ignoreCase = true) == true -> "Incorrect email or password. Please try again."
-                                    e.message?.contains("User not found", ignoreCase = true) == true -> "No account found with this email. Please register first."
-                                    else -> "Login failed. Please check your credentials and try again."
-                                }
-                            } finally {
-                                isLoading = false
-                            }
-                        }
+                        onLogin(email.trim(), password)
                     },
                     modifier = Modifier
                         .fillMaxWidth()

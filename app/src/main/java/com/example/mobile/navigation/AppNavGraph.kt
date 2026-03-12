@@ -11,7 +11,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
-import com.example.mobile.SupabaseClient
+import com.example.mobile.MetricsService
+import com.example.mobile.presentation.auth.AuthUiState
+import com.example.mobile.presentation.auth.AuthViewModel
 import com.example.mobile.presentation.challenges.ChallengesViewModel
 import com.example.mobile.presentation.challenges.CreateUiState
 import com.example.mobile.presentation.challenges.DetailUiState
@@ -20,21 +22,28 @@ import com.example.mobile.ui.screens.CreateChallengeScreen
 import com.example.mobile.ui.screens.DashboardScreen
 import com.example.mobile.ui.screens.LoginScreen
 import com.example.mobile.ui.screens.RegisterScreen
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
-    val scope: CoroutineScope = rememberCoroutineScope()
+    val authViewModel: AuthViewModel = viewModel(factory = AuthViewModel.Factory)
     val challengesViewModel: ChallengesViewModel = viewModel(factory = ChallengesViewModel.Factory)
+    val logoutUiState by authViewModel.logoutUiState.collectAsStateWithLifecycle()
 
-    val startDestination = if (SupabaseClient.hasActiveSession()) {
+    val startDestination = if (authViewModel.hasActiveSession()) {
         Routes.DASHBOARD
     } else {
         Routes.LOGIN
+    }
+
+    LaunchedEffect(logoutUiState) {
+        if (logoutUiState is AuthUiState.Success) {
+            authViewModel.resetLogoutState()
+            navController.navigate(Routes.LOGIN) {
+                popUpTo(0)
+            }
+        }
     }
 
     NavHost(
@@ -43,13 +52,21 @@ fun AppNavGraph(navController: NavHostController) {
     ) {
 
         composable(Routes.LOGIN) {
-            LoginScreen(
-                onLoginSuccess = {
+            val loginUiState by authViewModel.loginUiState.collectAsStateWithLifecycle()
+
+            LaunchedEffect(loginUiState) {
+                if (loginUiState is AuthUiState.Success) {
+                    authViewModel.resetLoginState()
                     challengesViewModel.refreshChallenges()
                     navController.navigate(Routes.DASHBOARD) {
                         popUpTo(Routes.LOGIN) { inclusive = true }
                     }
-                },
+                }
+            }
+
+            LoginScreen(
+                uiState = loginUiState,
+                onLogin = authViewModel::login,
                 onNavigateToRegister = {
                     navController.navigate(Routes.REGISTER)
                 }
@@ -57,13 +74,22 @@ fun AppNavGraph(navController: NavHostController) {
         }
 
         composable(Routes.REGISTER) {
-            RegisterScreen(
-                onRegisterSuccess = {
+            val registerUiState by authViewModel.registerUiState.collectAsStateWithLifecycle()
+
+            LaunchedEffect(registerUiState) {
+                if (registerUiState is AuthUiState.Success) {
+                    authViewModel.resetRegisterState()
+                    MetricsService.track("club_joined")
                     challengesViewModel.refreshChallenges()
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(Routes.LOGIN) { inclusive = true }
                     }
-                },
+                }
+            }
+
+            RegisterScreen(
+                uiState = registerUiState,
+                onRegister = authViewModel::register,
                 onNavigateToLogin = {
                     navController.popBackStack()
                 }
@@ -80,14 +106,7 @@ fun AppNavGraph(navController: NavHostController) {
                 onViewDetails = { challengeId ->
                     navController.navigate("${Routes.CHALLENGE_DETAIL}/$challengeId")
                 },
-                onLogout = {
-                    scope.launch {
-                        SupabaseClient.signOut()
-                        navController.navigate(Routes.LOGIN) {
-                            popUpTo(0)
-                        }
-                    }
-                },
+                onLogout = authViewModel::logout,
                 onRetry = { challengesViewModel.refreshChallenges() }
             )
         }

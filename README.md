@@ -46,6 +46,12 @@ Rewrite README into rubric evidence document + GenAI transparency section.
 
 Security hygiene
 
-Move Supabase URL/key into secure config mechanism (at minimum build config/env handling for submission)
+## Environment Variables
+
+Supabase URL and Key are now set in the `local.properties` file located at the project root.
+They are called `SUPABASE_URL` and `SUPABASE_KEY`.
+They are accessed via BuildConfig.
+
+
 
 

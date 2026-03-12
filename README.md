@@ -59,7 +59,7 @@ The Background Sync is ran every 15 minutes after app startup as refreshChalleng
 - Registers a `PeriodicWorkRequest` with a 15-minute interval (the WorkManager minimum).
 - Constrained to only run when the device has a network connection (`NetworkType.CONNECTED`).
 - Uses `ExistingPeriodicWorkPolicy.KEEP` so reopening the app does not queue duplicate workers.
-- Scheduled once on app start, before any Activity is created.
+- Enqueued once on app start (before any Activity is created); first execution occurs after the 15-minute interval.
 
 
 ## Environment Variables

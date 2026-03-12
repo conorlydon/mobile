@@ -45,11 +45,19 @@ The Background Sync is ran every 15 minutes after app startup as refreshChalleng
 - Enqueued once on app start (before any Activity is created); first execution occurs after the 15-minute interval.
 
 
+## Logging
+
+Using `android.util.Log`. Filter by tag which are just equal to the file name in Logcat:
+
+- `ChallengeSyncWorker` — sync start, success, and retry on failure
+- `ChallengesViewModel` — errors in refresh, create, and join
+- `AuthViewModel` — errors in login, register, and logout
+
 ## Environment Variables
 
-Supabase URL and Key are now set in the `local.properties` file located at the project root.
+Supabase URL and Key are set in the `local.properties` file located at the project root.
 They are called `SUPABASE_URL` and `SUPABASE_KEY`.
-They are accessed via BuildConfig.
+They are imported and accessed via BuildConfig.
 
 
 

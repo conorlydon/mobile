@@ -32,8 +32,6 @@ Move auth/register calls out of screens into repository/use-case and ViewModel.
 
 Background/offline
 
-Add WorkManager job for periodic challenge sync/retry queue.
-
 Room robustness
 
 Replace clear-and-reload with merge/upsert strategy.
@@ -45,6 +43,24 @@ Documentation
 Rewrite README into rubric evidence document + GenAI transparency section.
 
 Security hygiene
+
+## Background Sync (WorkManager)
+
+Challenges are kept up to date in the background using `WorkManager`.
+
+The Background Sync is ran every 15 minutes after app startup as refreshChallenges() is already ran on login.
+
+**Worker:** `ChallengeSyncWorker` (`worker/ChallengeSyncWorker.kt`)
+- Extends `CoroutineWorker` so the sync runs in a coroutine, off the main thread.
+- Calls `DefaultChallengeRepository.refreshChallenges()` which fetches from Supabase and updates the local Room database in a single transaction.
+- Returns `Result.retry()` on failure — WorkManager will back off and retry automatically.
+
+**Scheduling:** `MobileApplication.onCreate()`
+- Registers a `PeriodicWorkRequest` with a 15-minute interval (the WorkManager minimum).
+- Constrained to only run when the device has a network connection (`NetworkType.CONNECTED`).
+- Uses `ExistingPeriodicWorkPolicy.KEEP` so reopening the app does not queue duplicate workers.
+- Scheduled once on app start, before any Activity is created.
+
 
 ## Environment Variables
 

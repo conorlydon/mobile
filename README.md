@@ -1,31 +1,6 @@
 ### TODO
 
-## THEME
 
-MAYBE DIFFERENT COLORS? DO LAST 
-
-## Highest-impact checklist (do these first)
-State handling polish
-
-Add UiState (Loading/Success/Empty/Error) for dashboard + detail + create flows.
-
-Layering cleanup
-
-Move auth/register calls out of screens into repository/use-case and ViewModel.
-
-Background/offline
-
-Room robustness
-
-Replace clear-and-reload with merge/upsert strategy.
-
-Turn on schema export + add migration strategy notes.
-
-Documentation
-
-Rewrite README into rubric evidence document + GenAI transparency section.
-
-Security hygiene
 
 ## Background Sync (WorkManager)
 
@@ -58,7 +33,7 @@ Using `android.util.Log`. Filter by tag which are just equal to the file name in
 ## Environment Variables
 
 Supabase URL and Key are set in the `local.properties` file located at the project root.
-They are called `SUPABASE_URL` and `SUPABASE_KEY`.
+They are called `MOBILE_APP_SUPABASE_URL` and `MOBILE_APP_SUPABASE_KEY`.
 They are imported and accessed via BuildConfig.
 
 

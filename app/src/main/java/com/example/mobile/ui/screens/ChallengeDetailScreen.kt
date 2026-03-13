@@ -176,7 +176,7 @@ private fun ChallengeDetailContent(
                 ) {
                     Column(
                         modifier = Modifier.padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.Start
                     ) {
                         Text(
                             text = challenge.teamName,
@@ -185,7 +185,7 @@ private fun ChallengeDetailContent(
                             color = MobileThemeExtras.colors.heading
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        
+
                         // Skill Level Badge
                         Box(
                             modifier = Modifier

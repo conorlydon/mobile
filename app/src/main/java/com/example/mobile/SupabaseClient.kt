@@ -10,8 +10,17 @@ import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import com.example.mobile.domain.challenges.Challenge
 import io.github.jan.supabase.supabaseJson
+import android.util.Log
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.UUID
 
 object SupabaseClient {
@@ -35,8 +44,8 @@ object SupabaseClient {
     suspend fun registerTeam(
         email: String,
         password: String,
-        skillLevel: String,
-        eircode: String
+        teamName: String,
+        location: String
     ) {
         signUpWithEmail(email = email, password = password)
 
@@ -50,10 +59,17 @@ object SupabaseClient {
             buildJsonObject {
                 put("id", currentUser.id)
                 put("email", currentUser.email ?: email)
-                put("skill_level", skillLevel)
-                put("eircode", eircode)
+                put("team_name", teamName)
+                put("location", location)
             }
         )
+    }
+
+    suspend fun getCurrentUserProfile(): Pair<String, String> {
+        val userId = supabase.auth.currentUserOrNull()?.id ?: return Pair("", "")
+        val rows = postgrest.from("users").select().decodeList<UserProfileData>()
+        val profile = rows.firstOrNull { it.id == userId }
+        return Pair(profile?.teamName ?: "", profile?.location ?: "")
     }
 
     suspend fun signInWithEmail(email: String, password: String) {
@@ -91,16 +107,72 @@ object SupabaseClient {
             throw IllegalArgumentException("Challenge owner cannot join their own challenge")
         }
 
-        postgrest.from("challenge_join_requests").insert(
-            buildJsonObject {
-                put("id", UUID.randomUUID().toString())
-                put("challenge_id", challenge.id)
-                put("challenge_team_name", challenge.teamName)
-                put("requester_email", requesterEmail)
-                put("target_email", targetEmail)
-                put("status", "pending")
+        runCatching {
+            postgrest.from("challenge_join_requests").insert(
+                buildJsonObject {
+                    put("id", UUID.randomUUID().toString())
+                    put("challenge_id", challenge.id)
+                    put("challenge_team_name", challenge.teamName)
+                    put("requester_email", requesterEmail)
+                    put("target_email", targetEmail)
+                    put("status", "pending")
+                }
+            )
+        }.onFailure { e ->
+            if (e.message?.contains("23505") == false && e.message?.contains("duplicate", ignoreCase = true) == false) {
+                throw e
             }
-        )
+        }
+
+        val (requesterTeamName, _) = getCurrentUserProfile()
+
+        runCatching {
+            sendJoinRequestEmail(
+                requesterEmail = requesterEmail,
+                requesterTeamName = requesterTeamName,
+                targetEmail = targetEmail,
+                challengeTeamName = challenge.teamName
+            )
+        }.onFailure { Log.e("SupabaseClient", "Failed to send join request email", it) }
+    }
+
+    private suspend fun sendJoinRequestEmail(
+        requesterEmail: String,
+        requesterTeamName: String,
+        targetEmail: String,
+        challengeTeamName: String
+    ) = withContext(Dispatchers.IO) {
+        Log.d("SupabaseClient", "Sending email to: $targetEmail from: $requesterEmail ($requesterTeamName) for challenge: $challengeTeamName")
+        val connection = URL("https://api.emailjs.com/api/v1.0/email/send").openConnection() as HttpURLConnection
+        try {
+            connection.requestMethod = "POST"
+            connection.setRequestProperty("Content-Type", "application/json")
+            connection.doOutput = true
+
+            val displayName = if (requesterTeamName.isNotBlank()) requesterTeamName else requesterEmail
+            val body = """
+                {
+                    "service_id": "service_k5qjmsw",
+                    "template_id": "template_vcd7r8p",
+                    "user_id": "${BuildConfig.EMAILJS_PUBLIC_KEY}",
+                    "template_params": {
+                        "to_email": "$targetEmail",
+                        "name": "$displayName",
+                        "message": "$displayName ($requesterEmail) has requested a friendly match against your team ($challengeTeamName). Reply to their email to arrange the details."
+                    }
+                }
+            """.trimIndent()
+
+            connection.outputStream.use { it.write(body.toByteArray()) }
+
+            val code = connection.responseCode
+            if (code !in 200..299) {
+                val error = connection.errorStream?.bufferedReader()?.readText() ?: "Unknown error"
+                throw IllegalStateException("Failed to send email (HTTP $code): $error")
+            }
+        } finally {
+            connection.disconnect()
+        }
     }
 
     suspend fun signOut() {
@@ -110,4 +182,11 @@ object SupabaseClient {
     fun hasActiveSession(): Boolean {
         return supabase.auth.currentSessionOrNull() != null
     }
+
+    @Serializable
+    private data class UserProfileData(
+        val id: String,
+        @SerialName("team_name") val teamName: String = "",
+        val location: String = ""
+    )
 }

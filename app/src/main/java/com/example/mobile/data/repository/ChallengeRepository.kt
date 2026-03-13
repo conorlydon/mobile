@@ -10,9 +10,7 @@ interface ChallengeRepository {
     suspend fun refreshChallenges()
     suspend fun requestJoinChallenge(challenge: Challenge)
     suspend fun createChallenge(
-        teamName: String,
         skillLevel: String,
-        location: String,
         date: LocalDate
     )
 }

@@ -12,14 +12,14 @@ class DefaultAuthRepository : AuthRepository {
     override suspend fun register(
         email: String,
         password: String,
-        skillLevel: String,
-        eircode: String
+        teamName: String,
+        location: String
     ) {
         SupabaseClient.registerTeam(
             email = email,
             password = password,
-            skillLevel = skillLevel,
-            eircode = eircode
+            teamName = teamName,
+            location = location
         )
     }
 

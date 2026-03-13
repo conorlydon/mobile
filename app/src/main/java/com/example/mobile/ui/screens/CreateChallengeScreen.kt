@@ -21,12 +21,10 @@ import java.util.Locale
 @Composable
 fun CreateChallengeScreen(
     uiState: CreateUiState,
-    onCreate: (teamName: String, skillLevel: String, location: String, date: LocalDate) -> Unit,
+    onCreate: (skillLevel: String, date: LocalDate) -> Unit,
     onBack: () -> Unit
 ) {
-    var teamName by remember { mutableStateOf("") }
     var skillLevel by remember { mutableStateOf("") }
-    var location by remember { mutableStateOf("") }
     var date by remember { mutableStateOf("") }
     var isSkillLevelDropdownExpanded by remember { mutableStateOf(false) }
     
@@ -56,7 +54,7 @@ fun CreateChallengeScreen(
         }
     }
 
-    val isValid = teamName.isNotBlank() && skillLevel.isNotBlank() && location.isNotBlank() && parsedDate != null && dateError == null
+    val isValid = skillLevel.isNotBlank() && parsedDate != null && dateError == null
 
     Scaffold(
         topBar = {
@@ -83,15 +81,6 @@ fun CreateChallengeScreen(
                     .fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-            OutlinedTextField(
-                value = teamName,
-                onValueChange = { teamName = it },
-                label = { Text("Team Name") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                colors = MobileThemeExtras.formFieldColors()
-            )
-            
             // Skill Level Dropdown
             ExposedDropdownMenuBox(
                 expanded = isSkillLevelDropdownExpanded,
@@ -126,14 +115,6 @@ fun CreateChallengeScreen(
                 }
             }
             OutlinedTextField(
-                value = location,
-                onValueChange = { location = it },
-                label = { Text("Location") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                colors = MobileThemeExtras.formFieldColors()
-            )
-            OutlinedTextField(
                 value = date,
                 onValueChange = { date = it },
                 label = { Text("Date") },
@@ -159,12 +140,7 @@ fun CreateChallengeScreen(
             val isLoading = uiState is CreateUiState.Loading
             Button(
                 onClick = {
-                    onCreate(
-                        teamName.trim(),
-                        skillLevel.trim(),
-                        location.trim(),
-                        parsedDate!!
-                    )
+                    onCreate(skillLevel.trim(), parsedDate!!)
                 },
                 enabled = isValid && !isLoading,
                 modifier = Modifier

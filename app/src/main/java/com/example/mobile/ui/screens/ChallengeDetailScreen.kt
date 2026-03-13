@@ -2,7 +2,6 @@ package com.example.mobile.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
@@ -80,7 +79,6 @@ private fun ChallengeDetailContent(
     onJoinResultShown: () -> Unit,
     onBack: () -> Unit
 ) {
-    var showContactDialog by remember { mutableStateOf(false) }
     var showJoinDialog by remember { mutableStateOf(false) }
     var showResultDialog by remember { mutableStateOf(false) }
 
@@ -91,34 +89,18 @@ private fun ChallengeDetailContent(
         }
     }
 
-    if (showContactDialog) {
-        AlertDialog(
-            onDismissRequest = { showContactDialog = false },
-            title = { Text("Contact ${challenge.teamName}") },
-            text = { Text(challenge.createdByEmail ?: "No contact info available") },
-            confirmButton = {
-                TextButton(
-                    onClick = { showContactDialog = false },
-                    colors = MobileThemeExtras.textButtonColors()
-                ) {
-                    Text("Close")
-                }
-            }
-        )
-    }
-
     if (showJoinDialog) {
         AlertDialog(
             onDismissRequest = { showJoinDialog = false },
-            title = { Text("Join Challenge") },
-            text = { Text("Are you sure you want to join this challenge? An email will be sent to ${challenge.teamName}.") },
+            title = { Text("Request Challenge") },
+            text = { Text("Are you sure you want to request this challenge? An email will be sent to ${challenge.teamName}.") },
             confirmButton = {
                 TextButton(
                     onClick = { onJoinChallenge(challenge) },
                     enabled = joinUiState !is JoinChallengeUiState.Loading,
                     colors = MobileThemeExtras.textButtonColors()
                 ) {
-                    Text(if (joinUiState is JoinChallengeUiState.Loading) "Sending..." else "Join")
+                    Text(if (joinUiState is JoinChallengeUiState.Loading) "Sending..." else "Request")
                 }
             },
             dismissButton = {
@@ -145,7 +127,7 @@ private fun ChallengeDetailContent(
                 showResultDialog = false
                 onJoinResultShown()
             },
-            title = { Text("Join Challenge") },
+            title = { Text("Request Challenge") },
             text = { Text(resultMessage) },
             confirmButton = {
                 TextButton(
@@ -245,32 +227,15 @@ private fun ChallengeDetailContent(
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 // Action Buttons
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                Button(
+                    onClick = { showJoinDialog = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .clip(MobileThemeExtras.shapes.actionButton),
+                    colors = MobileThemeExtras.primaryButtonColors()
                 ) {
-                    Button(
-                        onClick = { showJoinDialog = true },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(50.dp)
-                            .clip(MobileThemeExtras.shapes.actionButton),
-                        colors = MobileThemeExtras.primaryButtonColors()
-                    ) {
-                        Text("Join Challenge", fontWeight = FontWeight.Medium)
-                    }
-                    
-                    OutlinedButton(
-                        onClick = { showContactDialog = true },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(50.dp)
-                            .clip(MobileThemeExtras.shapes.actionButton),
-                        border = BorderStroke(2.dp, MobileThemeExtras.colors.brandPrimary),
-                        colors = MobileThemeExtras.outlinedButtonColors()
-                    ) {
-                        Text("Contact Team", fontWeight = FontWeight.Medium)
-                    }
+                    Text("Request Challenge", fontWeight = FontWeight.Medium)
                 }
             }
         }

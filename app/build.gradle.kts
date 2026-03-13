@@ -1,8 +1,10 @@
 import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
 val supabaseURL: String =
-    gradleLocalProperties(rootDir, providers).getProperty("SUPABASE_URL") ?: ""
+    gradleLocalProperties(rootDir, providers).getProperty("MOBILE_APP_SUPABASE_URL") ?: ""
 val supabaseKey: String =
-    gradleLocalProperties(rootDir, providers).getProperty("SUPABASE_KEY") ?: ""
+    gradleLocalProperties(rootDir, providers).getProperty("MOBILE_APP_SUPABASE_KEY") ?: ""
+val emailjsPublicKey: String =
+    gradleLocalProperties(rootDir, providers).getProperty("EMAILJS_PUBLIC_KEY") ?: ""
 
 plugins {
     alias(libs.plugins.android.application)
@@ -25,6 +27,7 @@ android {
 
         buildConfigField("String","SUPABASE_URL","\"$supabaseURL\"")
         buildConfigField("String", "SUPABASE_KEY", "\"$supabaseKey\"")
+        buildConfigField("String", "EMAILJS_PUBLIC_KEY", "\"$emailjsPublicKey\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

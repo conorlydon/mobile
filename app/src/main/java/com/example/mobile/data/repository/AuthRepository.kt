@@ -6,8 +6,8 @@ interface AuthRepository {
     suspend fun register(
         email: String,
         password: String,
-        skillLevel: String,
-        eircode: String
+        teamName: String,
+        location: String
     )
     suspend fun logout()
 }

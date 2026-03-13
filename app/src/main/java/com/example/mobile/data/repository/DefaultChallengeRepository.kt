@@ -41,11 +41,10 @@ class DefaultChallengeRepository(
     }
 
     override suspend fun createChallenge(
-        teamName: String,
         skillLevel: String,
-        location: String,
         date: LocalDate
     ) {
+        val (teamName, location) = SupabaseClient.getCurrentUserProfile()
         val challenge = Challenge(
             id = UUID.randomUUID().toString(),
             teamName = teamName,

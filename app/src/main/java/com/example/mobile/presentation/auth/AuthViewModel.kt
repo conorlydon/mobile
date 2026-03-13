@@ -45,8 +45,8 @@ class AuthViewModel(
     fun register(
         email: String,
         password: String,
-        skillLevel: String,
-        eircode: String
+        teamName: String,
+        location: String
     ) {
         _registerUiState.value = AuthUiState.Loading
         viewModelScope.launch {
@@ -54,15 +54,15 @@ class AuthViewModel(
                 repository.register(
                     email = email.trim(),
                     password = password,
-                    skillLevel = skillLevel.trim(),
-                    eircode = eircode.trim()
+                    teamName = teamName.trim(),
+                    location = location.trim()
                 )
             }.onSuccess {
                 _registerUiState.value = AuthUiState.Success
             }.onFailure { error ->
                 Log.e(TAG, "register failed", error)
                 _registerUiState.value = AuthUiState.Error(
-                    registerErrorMessage(email, password, skillLevel, eircode, error)
+                    registerErrorMessage(email, password, teamName, location, error)
                 )
             }
         }
@@ -119,17 +119,16 @@ private fun loginErrorMessage(email: String, password: String, error: Throwable)
 private fun registerErrorMessage(
     email: String,
     password: String,
-    skillLevel: String,
-    eircode: String,
+    teamName: String,
+    location: String,
     error: Throwable
 ): String = when {
-    skillLevel.isBlank() -> "Please enter your team's skill level"
-    eircode.isBlank() -> "Please enter your eircode"
+    teamName.isBlank() -> "Please enter your team name"
+    location.isBlank() -> "Please enter your location"
     email.isBlank() -> "Please enter your email address"
     password.isBlank() -> "Please enter a password"
     !email.contains("@") -> "Please enter a valid email address"
     password.length < 6 -> "Password must be at least 6 characters long"
-    eircode.length < 3 -> "Please enter a valid eircode"
     error.message?.contains("already registered", ignoreCase = true) == true ->
         "An account with this email already exists. Please login instead."
     error.message?.contains("weak password", ignoreCase = true) == true ->

@@ -146,8 +146,8 @@ fun AppNavGraph(navController: NavHostController) {
 
             CreateChallengeScreen(
                 uiState = createUiState,
-                onCreate = { teamName, skillLevel, location, date ->
-                    challengesViewModel.createChallenge(teamName, skillLevel, location, date)
+                onCreate = { skillLevel, date ->
+                    challengesViewModel.createChallenge(skillLevel, date)
                 },
                 onBack = { navController.popBackStack() }
             )

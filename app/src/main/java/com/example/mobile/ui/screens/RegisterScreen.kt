@@ -16,22 +16,15 @@ import com.example.mobile.ui.theme.MobileThemeExtras
 @Composable
 fun RegisterScreen(
     uiState: AuthUiState,
-    onRegister: (email: String, password: String, skillLevel: String, eircode: String) -> Unit,
+    onRegister: (email: String, password: String, teamName: String, location: String) -> Unit,
     onNavigateToLogin: () -> Unit
 ) {
-    var skillLevel by remember { mutableStateOf("") }
-    var eircode by remember { mutableStateOf("") }
+    var teamName by remember { mutableStateOf("") }
+    var location by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var isSkillLevelDropdownExpanded by remember { mutableStateOf(false) }
     val isLoading = uiState is AuthUiState.Loading
     val errorMessage = (uiState as? AuthUiState.Error)?.message.orEmpty()
-
-    val skillLevels = listOf(
-        "Senior", "Intermediate", "Minor",
-        "U17", "U16", "U15", "U14", "U13", "U12", "U11", "U10", "U9",
-        "Casual"
-    )
 
     Scaffold { padding ->
         Box(
@@ -56,45 +49,19 @@ fun RegisterScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
 
-                ExposedDropdownMenuBox(
-                    expanded = isSkillLevelDropdownExpanded,
-                    onExpandedChange = { isSkillLevelDropdownExpanded = it }
-                ) {
-                    OutlinedTextField(
-                        value = skillLevel,
-                        onValueChange = { },
-                        readOnly = true,
-                        label = { Text("Skill Level") },
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = isSkillLevelDropdownExpanded)
-                        },
-                        modifier = Modifier
-                            .menuAnchor()
-                            .fillMaxWidth(),
-                        colors = MobileThemeExtras.formFieldColors()
-                    )
-
-                    ExposedDropdownMenu(
-                        expanded = isSkillLevelDropdownExpanded,
-                        onDismissRequest = { isSkillLevelDropdownExpanded = false }
-                    ) {
-                        skillLevels.forEach { level ->
-                            DropdownMenuItem(
-                                text = { Text(level) },
-                                onClick = {
-                                    skillLevel = level
-                                    isSkillLevelDropdownExpanded = false
-                                }
-                            )
-                        }
-                    }
-                }
+                OutlinedTextField(
+                    value = teamName,
+                    onValueChange = { teamName = it },
+                    label = { Text("Team Name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = MobileThemeExtras.formFieldColors()
+                )
                 Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedTextField(
-                    value = eircode,
-                    onValueChange = { eircode = it },
-                    label = { Text("Eircode") },
+                    value = location,
+                    onValueChange = { location = it },
+                    label = { Text("Location") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = MobileThemeExtras.formFieldColors()
                 )
@@ -127,7 +94,7 @@ fun RegisterScreen(
 
                 Button(
                     onClick = {
-                        onRegister(email.trim(), password, skillLevel.trim(), eircode.trim())
+                        onRegister(email.trim(), password, teamName.trim(), location.trim())
                     },
                     modifier = Modifier
                         .fillMaxWidth()

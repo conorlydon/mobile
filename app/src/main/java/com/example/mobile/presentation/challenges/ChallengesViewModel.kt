@@ -84,18 +84,14 @@ class ChallengesViewModel(
     }
 
     fun createChallenge(
-        teamName: String,
         skillLevel: String,
-        location: String,
         date: LocalDate
     ) {
         _createUiState.value = CreateUiState.Loading
         viewModelScope.launch {
             runCatching {
                 repository.createChallenge(
-                    teamName = teamName.trim(),
                     skillLevel = skillLevel.trim(),
-                    location = location.trim(),
                     date = date
                 )
             }.onSuccess {
@@ -104,13 +100,9 @@ class ChallengesViewModel(
                 Log.e(TAG, "createChallenge failed", it)
                 _createUiState.value = CreateUiState.Error(
                     when {
-                        teamName.isBlank() -> "Please enter a team name"
-                        skillLevel.isBlank() -> "Please enter a skill level"
-                        location.isBlank() -> "Please enter a location"
+                        skillLevel.isBlank() -> "Please select a skill level"
                         it.message?.contains("network", ignoreCase = true) == true ->
                             "Unable to connect. Please check your internet connection and try again."
-                        it.message?.contains("exists", ignoreCase = true) == true ->
-                            "A challenge with these details already exists."
                         else -> "Couldn't create challenge. Please try again."
                     }
                 )

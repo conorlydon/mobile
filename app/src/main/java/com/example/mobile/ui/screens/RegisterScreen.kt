@@ -8,7 +8,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import com.example.mobile.MetricsService
 import com.example.mobile.presentation.auth.AuthUiState
 import com.example.mobile.ui.theme.MobileThemeExtras
 

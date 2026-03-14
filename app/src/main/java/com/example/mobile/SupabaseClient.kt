@@ -107,6 +107,7 @@ object SupabaseClient {
             throw IllegalArgumentException("Challenge owner cannot join their own challenge")
         }
 
+        // Duplicate check prevents spam requests to the same challenge
         val existing = postgrest.from("challenge_join_requests")
             .select {
                 filter {
@@ -120,6 +121,7 @@ object SupabaseClient {
             throw IllegalStateException("You have already requested to join this challenge.")
         }
 
+        // Client-generated UUID so we don't depend on DB auto-increment
         postgrest.from("challenge_join_requests").insert(
             buildJsonObject {
                 put("id", UUID.randomUUID().toString())
@@ -133,6 +135,7 @@ object SupabaseClient {
 
         val (requesterTeamName, _) = getCurrentUserProfile()
 
+        // Email failure is non-fatal — the DB record is already saved so the request isn't lost
         runCatching {
             sendJoinRequestEmail(
                 requesterEmail = requesterEmail,
@@ -150,12 +153,15 @@ object SupabaseClient {
         challengeTeamName: String
     ) = withContext(Dispatchers.IO) {
         Log.d("SupabaseClient", "Sending email to: $targetEmail from: $requesterEmail ($requesterTeamName) for challenge: $challengeTeamName")
+        // Raw HttpURLConnection used to avoid adding an HTTP library dependency
+        // AI assisted - Used Claude to help me to make a POST request in kotlin
         val connection = URL("https://api.emailjs.com/api/v1.0/email/send").openConnection() as HttpURLConnection
         try {
             connection.requestMethod = "POST"
             connection.setRequestProperty("Content-Type", "application/json")
             connection.doOutput = true
 
+            // Falls back to email if team name is blank (e.g. profile not fully set up)
             val displayName = if (requesterTeamName.isNotBlank()) requesterTeamName else requesterEmail
             val body = """
                 {
@@ -169,7 +175,8 @@ object SupabaseClient {
                     }
                 }
             """.trimIndent()
-
+            // Converts the JSON string to bytes to send the POST request
+            //  .use{} ensures the stream is closed automatically after
             connection.outputStream.use { it.write(body.toByteArray()) }
 
             val code = connection.responseCode

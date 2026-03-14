@@ -111,7 +111,10 @@ class ChallengesViewModel(
     }
 
     fun requestJoinChallenge(challenge: Challenge) {
+        // Immediately show a loading spinner while the request is in flight
         _joinChallengeUiState.value = JoinChallengeUiState.Loading
+
+        // Scope so the coroutine is cancelled if the ViewModel is destroyed
         viewModelScope.launch {
             runCatching {
                 repository.requestJoinChallenge(challenge)

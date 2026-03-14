@@ -107,22 +107,29 @@ object SupabaseClient {
             throw IllegalArgumentException("Challenge owner cannot join their own challenge")
         }
 
-        runCatching {
-            postgrest.from("challenge_join_requests").insert(
-                buildJsonObject {
-                    put("id", UUID.randomUUID().toString())
-                    put("challenge_id", challenge.id)
-                    put("challenge_team_name", challenge.teamName)
-                    put("requester_email", requesterEmail)
-                    put("target_email", targetEmail)
-                    put("status", "pending")
+        val existing = postgrest.from("challenge_join_requests")
+            .select {
+                filter {
+                    eq("challenge_id", challenge.id)
+                    eq("requester_email", requesterEmail)
                 }
-            )
-        }.onFailure { e ->
-            if (e.message?.contains("23505") == false && e.message?.contains("duplicate", ignoreCase = true) == false) {
-                throw e
             }
+            .decodeList<JsonObject>()
+
+        if (existing.isNotEmpty()) {
+            throw IllegalStateException("You have already requested to join this challenge.")
         }
+
+        postgrest.from("challenge_join_requests").insert(
+            buildJsonObject {
+                put("id", UUID.randomUUID().toString())
+                put("challenge_id", challenge.id)
+                put("challenge_team_name", challenge.teamName)
+                put("requester_email", requesterEmail)
+                put("target_email", targetEmail)
+                put("status", "pending")
+            }
+        )
 
         val (requesterTeamName, _) = getCurrentUserProfile()
 

@@ -1,41 +1,142 @@
-### TODO
+# Mobile — Sports Challenge App
 
+An Android application for GAA clubs and teams to post and discover open match challenges. Built with Kotlin and Jetpack Compose, targeting Android API 34+.
 
+---
 
-## Background Sync (WorkManager)
+## Features
 
-Challenges are kept up to date in the background using `WorkManager`.
+- Register a team with name and location
+- Log in and browse upcoming challenges from other teams
+- Post your own open challenge with skill level and date
+- View challenge details and send a join request (triggers an email to the challenge creator)
+- Challenges are cached locally and stay available offline
 
-The Background Sync is ran every 15 minutes after app startup as refreshChallenges() is already ran on login.
+---
 
-**Worker:** `ChallengeSyncWorker` (`worker/ChallengeSyncWorker.kt`)
-- Extends `CoroutineWorker` so the sync runs in a coroutine, off the main thread.
-- Calls `DefaultChallengeRepository.refreshChallenges()` which fetches from Supabase and updates the local Room database in a single transaction.
-- Returns `Result.retry()` on failure — WorkManager will back off and retry automatically.
+## Architecture
+
+The app follows the recommended Android layered architecture:
+
+```
+UI Layer        → Compose screens + ViewModels (StateFlow)
+Data Layer      → Repository interfaces + Room (local) + Supabase (remote)
+Domain Layer    → Pure Kotlin models (no Android dependencies)
+```
+
+**Key components:**
+- `ui/screens/` — Compose screens (Login, Register, Dashboard, CreateChallenge, ChallengeDetail)
+- `presentation/` — ViewModels and sealed UI state classes
+- `navigation/` — `AppNavGraph`, `Routes`
+- `data/local/` — Room entity, DAO, database, type converters
+- `data/repository/` — `ChallengeRepository` interface + `DefaultChallengeRepository`
+- `domain/challenges/Challenge.kt` — domain model
+- `SupabaseClient.kt` — all remote operations (auth, CRUD, email)
+- `MetricsService.kt` — lightweight event tracking to Supabase `events` table
+- `worker/ChallengeSyncWorker.kt` — background sync via WorkManager
+- `MobileApplication.kt` — app entry point, schedules WorkManager
+
+---
+
+## Screens & Navigation
+
+| Screen | Route |
+|--------|-------|
+| Login | `login` |
+| Register | `register` |
+| Dashboard | `dashboard` |
+| Create Challenge | `create_challenge` |
+| Challenge Detail | `challenge_detail/{challengeId}` |
+
+- `challengeId` is passed as a `NavType.StringType` argument to the detail screen
+- Back stack is cleared on login/register so the user cannot navigate back to the auth screens
+- On app launch, an active Supabase session skips straight to Dashboard
+
+---
+
+## Local Persistence — Room
+
+- **Entity:** `ChallengeEntity` — maps to the `challenges` table
+- **DAO:** `ChallengeDao` — all queries return `Flow` for automatic UI updates
+- **Type converter:** `ChallengeTypeConverters` — converts `kotlinx.datetime.LocalDate` ↔ `String`
+- **Database:** `AppDatabase` — singleton, database file `mobile4.db`
+- `refreshChallenges()` uses `database.withTransaction {}` — clears and re-inserts atomically, so a failed sync never leaves an empty database
+- Data survives app restarts; the cached list is shown immediately on next launch while a fresh remote fetch runs in the background
+
+---
+
+## Cloud Database — Supabase
+
+**Tables:**
+| Table | Purpose |
+|-------|---------|
+| `users` | Team profiles (id, email, team_name, location) |
+| `challenges` | Open match challenges |
+| `challenge_join_requests` | Join requests (challenge_id, requester_email, target_email, status) |
+| `events` | Metrics/analytics events |
+
+**Auth:** Supabase Auth with email/password (`signUpWith`, `signInWith`, `signOut`, `currentSessionOrNull`)
+
+**Email notifications:** When a join request is submitted, an HTTP POST is made to the EmailJS API notifying the challenge creator by email.
+
+---
+
+## Background Sync — WorkManager
+
+**Worker:** `ChallengeSyncWorker`
+- Extends `CoroutineWorker` — runs entirely off the main thread
+- Calls `DefaultChallengeRepository.refreshChallenges()` to fetch from Supabase and update Room
+- Returns `Result.retry()` on failure — WorkManager handles backoff automatically
 
 **Scheduling:** `MobileApplication.onCreate()`
-- Registers a `PeriodicWorkRequest` with a 15-minute interval (the WorkManager minimum).
-- Constrained to only run when the device has a network connection (`NetworkType.CONNECTED`).
-- Uses `ExistingPeriodicWorkPolicy.KEEP` so reopening the app does not queue duplicate workers.
-- Enqueued once on app start (before any Activity is created); first execution occurs after the 15-minute interval.
+- `PeriodicWorkRequest` with a 15-minute interval (WorkManager minimum)
+- Constrained to `NetworkType.CONNECTED` — only runs when online
+- `ExistingPeriodicWorkPolicy.KEEP` — reopening the app does not enqueue duplicates
+- First execution is after the initial 15-minute interval (login triggers an immediate manual refresh)
 
+---
+
+## Concurrency
+
+- All ViewModel operations use `viewModelScope.launch` — cancelled automatically when the ViewModel is cleared
+- Network calls run under `withContext(Dispatchers.IO)`
+- Room DAO functions are `suspend` — Room dispatches them off the main thread internally
+- `runCatching` used for structured error handling in ViewModels
+
+---
 
 ## Logging
 
-Using `android.util.Log`. Filter by tag which are just equal to the file name in Logcat:
+Filter by tag in Logcat:
 
-- `MobileApplication` — WorkManager enqueued on startup
-- `DefaultChallengeRepository` — number of challenges fetched from Supabase
-- `ChallengeSyncWorker` — sync start, success, and retry on failure
-- `ChallengesViewModel` — errors in refresh, create, and join
-- `AuthViewModel` — errors in login, register, and logout
+| Tag | What it logs |
+|-----|-------------|
+| `MobileApplication` | WorkManager enqueued on startup |
+| `DefaultChallengeRepository` | Number of challenges fetched from Supabase |
+| `ChallengeSyncWorker` | Sync start, success, retry on failure |
+| `ChallengesViewModel` | Errors in refresh, create, join |
+| `AuthViewModel` | Errors in login, register, logout |
+| `SupabaseClient` | Email send attempts and failures |
+
+---
 
 ## Environment Variables
 
-Supabase URL and Key are set in the `local.properties` file located at the project root.
-They are called `MOBILE_APP_SUPABASE_URL` and `MOBILE_APP_SUPABASE_KEY`.
-They are imported and accessed via BuildConfig.
+Set in `local.properties` at the project root (not committed to git):
 
+```
+MOBILE_APP_SUPABASE_URL=...
+MOBILE_APP_SUPABASE_KEY=...
+EMAILJS_PUBLIC_KEY=...
+```
 
+Accessed via `BuildConfig` in code.
 
+---
 
+## Setup
+
+1. Clone the repo
+2. Add the required keys to `local.properties`
+3. Open in Android Studio and sync Gradle
+4. Run on an emulator or device with API 34+

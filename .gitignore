@@ -1,6 +1,7 @@
 
 
 *.db
+.vscode
 
 *.iml
 .gradle

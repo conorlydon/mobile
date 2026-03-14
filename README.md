@@ -1,4 +1,4 @@
-# Mobile — Sports Challenge App
+# Mobile — GAA Challenge App
 
 An Android application for GAA clubs and teams to post and discover open match challenges. Built with Kotlin and Jetpack Compose, targeting Android API 34+.
 

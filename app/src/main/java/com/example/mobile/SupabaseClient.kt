@@ -108,6 +108,7 @@ object SupabaseClient {
         }
 
         // Duplicate check prevents spam requests to the same challenge
+        // AI assisted - Used Claude to help implement a single request only rule to prevent spam
         val existing = postgrest.from("challenge_join_requests")
             .select {
                 filter {

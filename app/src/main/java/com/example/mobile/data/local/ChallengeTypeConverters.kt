@@ -1,5 +1,5 @@
 package com.example.mobile.data.local
-
+// AI Generated
 import androidx.room.TypeConverter
 import kotlinx.datetime.LocalDate
 

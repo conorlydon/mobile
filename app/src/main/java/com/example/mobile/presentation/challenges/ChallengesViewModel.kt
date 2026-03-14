@@ -1,4 +1,6 @@
 package com.example.mobile.presentation.challenges
+// AI declaration: lines 37-49 AI generated (reactive combine/stateIn dashboard orchestration).
+// AI declaration: lines 117-149 AI generated (join-request coroutine flow and error mapping)
 
 import android.app.Application
 import android.util.Log

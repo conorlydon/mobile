@@ -1,5 +1,8 @@
 package com.example.mobile.ui.screens
 
+// AI declaration: lines 87-146 AI generated
+// (join request dialog/result flow with LaunchedEffect side effects)
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
 import androidx.compose.material.icons.Icons

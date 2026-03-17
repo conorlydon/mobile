@@ -23,13 +23,17 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.UUID
 
+// Kotlin object = singleton — one shared instance for the entire app lifetime.
+// Supabase provides two modules used here:
+//   - Auth (auth-kt): email/password authentication and session management
+//   - Postgrest (postgrest-kt): type-safe REST API over the PostgreSQL database
 object SupabaseClient {
     private val supabase= createSupabaseClient(
-        supabaseUrl = BuildConfig.SUPABASE_URL,
-        supabaseKey = BuildConfig.SUPABASE_KEY
+        supabaseUrl = BuildConfig.SUPABASE_URL,   // injected from local.properties at build time
+        supabaseKey = BuildConfig.SUPABASE_KEY    
     ){
-        install(Auth)
-        install(Postgrest)
+        install(Auth)      // enables email/password auth and session handling
+        install(Postgrest) // enables SQL REST API calls to the Supabase database
     }
 
     val postgrest: Postgrest = supabase.postgrest

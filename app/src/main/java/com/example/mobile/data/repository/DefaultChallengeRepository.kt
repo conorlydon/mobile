@@ -13,11 +13,18 @@ import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDate
 import java.util.UUID
 
+// Concrete implementation of ChallengeRepository.
+// Repository pattern: the ViewModel calls this via the ChallengeRepository interface —
+// it doesn't know or care whether data comes from Room or Supabase.
+// Read source = Room (local, fast, offline-capable, reactive Flow).
+// Write target = Supabase first, then Room is updated immediately after.
 class DefaultChallengeRepository(
     private val database: AppDatabase,
     private val challengeDao: ChallengeDao
 ) : ChallengeRepository {
 
+    // Reads always come from Room — returns a Flow so the UI updates automatically when data changes.
+    // Maps ChallengeEntity (persistence model) to Challenge (domain model) before returning.
     override fun observeActiveChallenges(): Flow<List<Challenge>> {
         return challengeDao.observeActiveChallenges(today = today())
             .map { rows -> rows.map { it.toDomain() } }
@@ -27,6 +34,9 @@ class DefaultChallengeRepository(
         return challengeDao.observeChallengeById(challengeId).map { row -> row?.toDomain() }
     }
 
+    // Syncs challenges from Supabase into Room atomically.
+    // withTransaction ensures clearAll + upsertAll are treated as one operation —
+    // if upsertAll fails, Room rolls back to the previous state. The UI never sees an empty or partial list.
     override suspend fun refreshChallenges() {
         val remote = SupabaseClient.fetchChallenges()
         Log.d(TAG, "Fetched ${remote.size} challenges from Supabase")
@@ -46,7 +56,7 @@ class DefaultChallengeRepository(
     ) {
         val (teamName, location) = SupabaseClient.getCurrentUserProfile()
         val challenge = Challenge(
-            id = UUID.randomUUID().toString(),
+            id = UUID.randomUUID().toString(), // client-side UUID so Room can be updated immediately without waiting for DB
             teamName = teamName,
             skillLevel = skillLevel,
             location = location,
@@ -54,8 +64,8 @@ class DefaultChallengeRepository(
             createdByEmail = null
         )
 
-        SupabaseClient.insertChallenge(challenge)
-        challengeDao.upsert(challenge.toEntity())
+        SupabaseClient.insertChallenge(challenge) // write to remote first
+        challengeDao.upsert(challenge.toEntity()) // then update local Room cache immediately
     }
     companion object {
         private const val TAG = "DefaultChallengeRepository"

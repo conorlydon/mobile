@@ -9,8 +9,8 @@
 | **Supabase** | Remote database + auth client (signup, login, CRUD) |
 | **Local Room DB** | Offline-first local database with reactive queries |
 | **Data Layer / Data Flow** | Repository pattern connecting UI ↔ Room ↔ Supabase |
-| **COTC Integration** | EmailJS integration to notify teams of join requests |
-| **Report** | MetricsService – event tracking to Supabase `events` table |
+| **COTC Integration** | MetricsService – event tracking to Supabase `events` table |
+| **EmailJS** | Sends email notifications to challenge creators on join requests |
 
 ---
 
@@ -193,7 +193,7 @@ interface ChallengeDao {
 
 **Pattern used: Repository Pattern + MVVM**
 
-The app is split into layers so each layer only knows about the layer below it:
+The app is split into layers:
 
 ```
 UI (Composable Screens)
@@ -205,130 +205,22 @@ Repository (DefaultChallengeRepository, DefaultAuthRepository)
 Local Room DB             Supabase Remote API
 ```
 
-### Repository Interfaces
-
-Interfaces define the contract. ViewModels only know about the interface, not the implementation — this makes testing and swapping implementations easy.
-
-```kotlin
-interface ChallengeRepository {
-    fun observeActiveChallenges(): Flow<List<Challenge>>
-    fun observeChallenge(challengeId: String): Flow<Challenge?>
-    suspend fun refreshChallenges()
-    suspend fun requestJoinChallenge(challenge: Challenge)
-    suspend fun createChallenge(skillLevel: String, date: LocalDate)
-}
-```
-
-### DefaultChallengeRepository — The Core
-
-Key design decision — **Room is the single source of truth:**
-
-```
-refreshChallenges():
-  1. Fetch challenges list from Supabase
-  2. Open a Room database transaction
-  3. clearAll() — delete existing rows
-  4. upsertAll() — insert fresh data
-  5. Transaction commits atomically
-     → if step 1 fails, steps 3-4 never run (DB stays intact)
-     → UI Flow emits new list automatically
-```
-
-```
-observeActiveChallenges():
-  → Reads directly from Room (not Supabase)
-  → Returns only challenges with date >= today
-  → Returns a Flow that auto-updates when Room changes
-```
-
-```
-createChallenge():
-  1. Get current user profile (team_name, location) from Supabase
-  2. Generate UUID for the new challenge
-  3. Insert into Supabase (source of truth)
-  4. Insert into Room (local cache)
-  5. Flow emits — UI shows new challenge instantly
-```
-
-### ViewModels
-
-**AuthViewModel** — handles login, register, logout
-- Uses `StateFlow<AuthUiState>` to expose state to the UI
-- Maps errors to human-readable messages
-- Resets state when navigating (prevents stale error messages)
-
-**ChallengesViewModel** — handles dashboard, create, join, detail
-- Combines three flows (challenges list + loading flag + error) into one `DashboardUiState`
-- Uses `stateIn(WhileSubscribed(5000))` — stops collecting 5 seconds after last subscriber (saves resources)
-
-**UI States used:**
-
-| State | Values |
-|---|---|
-| `AuthUiState` | `Idle`, `Loading`, `Success`, `Error(message)` |
-| `DashboardUiState` | `Loading`, `Success(challenges)`, `Empty`, `Error(message)` |
-| `CreateUiState` | `Idle`, `Loading`, `Success`, `Error(message)` |
-| `JoinChallengeUiState` | `Idle`, `Loading`, `Success(message)`, `Error(message)` |
+- The **Repository** is the single source of truth — ViewModels never talk to Supabase or Room directly
+- **Room is the read source**: reads from the local DB and returns a `Flow` that auto-updates the UI
+- **Supabase is the write source**: new/updated data is written to Supabase, then synced into Room
+- **ViewModels** expose `StateFlow<UiState>` to the UI — states cover `Loading`, `Success`, `Empty`, `Error`
 
 **Likely questions:**
 - *Why use a Repository pattern?* — Decouples the ViewModel from knowing whether data comes from Room or Supabase. The ViewModel just calls `repository.observeActiveChallenges()` — it doesn't care where data comes from.
 - *Why is Room the single source of truth and not Supabase?* — Network calls are slow and can fail. By reading from Room and only writing to Supabase (then syncing back), the UI is always fast and responsive.
-- *What is a StateFlow?* — A hot flow that holds the latest value. When the UI subscribes, it immediately gets the current state. Safe for Jetpack Compose to collect.
-- *What does `withTransaction` do?* — Wraps multiple Room operations into an atomic unit. Either all operations succeed, or none do. Prevents a partial update where the DB is empty after a failed sync.
 
 ---
 
-## 6. COTC Integration (EmailJS)
-
-**Located in:** `SupabaseClient.kt` — `requestJoinChallenge()` and `sendJoinRequestEmail()`
-
-**What COTC integration means here:** When a team submits a join request, the challenge creator receives an email notification. This bridges the mobile app to external communication (email), which is the integration component.
-
-**How it works:**
-
-```
-User taps "Request to Join"
-  └─> requestJoinChallenge(challenge)
-      ├─> Validate: user is not challenge owner
-      ├─> Check: no existing join request exists
-      ├─> Insert row into challenge_join_requests table in Supabase
-      └─> sendJoinRequestEmail()
-          └─> HTTP POST to EmailJS API
-              with: requester email, challenge details, team name
-```
-
-**EmailJS integration:**
-- Uses `ktor` HTTP client to POST to `https://api.emailjs.com/api/v1.0/email/send`
-- Sends: service ID, template ID, requester email, challenge info
-- API key injected from `BuildConfig.EMAILJS_PUBLIC_KEY`
-- **Email failure is non-fatal** — if the email fails, the join request is still saved in Supabase. The app logs the error but does not show it to the user (metrics only).
-
-**Likely questions:**
-- *Why EmailJS instead of Supabase Edge Functions?* — EmailJS is a simpler third-party service that sends emails via HTTP POST without needing a server. Good for prototyping and direct mobile integration.
-- *Why is email failure non-fatal?* — The join request data is saved in Supabase regardless. The email is a notification convenience, not a core requirement. Failing it shouldn't block the user's action.
-- *How is the join request duplicate check done?* — Before inserting, the app queries `challenge_join_requests` for a row matching both `challenger_email` and `challenge_id`. If found, it throws an error without inserting.
-
----
-
-## 7. Report (MetricsService)
+## 6. COTC Integration (MetricsService)
 
 **File:** `app/src/main/java/com/example/mobile/MetricsService.kt`
 
-**What it is:** A lightweight analytics/reporting service that tracks user actions by inserting event records into Supabase.
-
-```kotlin
-object MetricsService {
-    suspend fun track(eventName: String) {
-        try {
-            SupabaseClient.postgrest["events"].insert(
-                mapOf("event_name" to eventName)
-            )
-        } catch (_: Exception) {
-            // Silently ignored — metrics must never disrupt the user
-        }
-    }
-}
-```
+**What it is:** A lightweight analytics/reporting service that tracks user actions by inserting event records into the Supabase `events` table. This is the COTC integration component.
 
 **Events tracked:**
 
@@ -404,4 +296,4 @@ Background Sync (WorkManager - every 15 min):
 | **Jetpack Compose** | Declarative UI framework for Android |
 | **MVVM Pattern** | Separates UI logic (ViewModel) from business logic (Repository) |
 | **Repository Pattern** | Abstracts data source from UI — Room or Supabase, same interface |
-| **EmailJS** | HTTP-based email sending without a custom backend server |
+| **MetricsService** | Event tracking to Supabase — COTC integration component |

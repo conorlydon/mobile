@@ -7,4 +7,4 @@ sealed class DetailUiState {
     object Loading : DetailUiState()
     data class Success(val challenge: Challenge) : DetailUiState()
     data class Error(val message: String) : DetailUiState()
-}
+} // the compiler knows these are the only states the detailui can be in

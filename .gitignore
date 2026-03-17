@@ -53,3 +53,6 @@ google-services.json
 
 # Profiling
 *.hprof
+
+# Claude Code worktrees
+.claude/

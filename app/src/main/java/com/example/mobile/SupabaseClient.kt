@@ -98,15 +98,16 @@ object SupabaseClient {
     }
 
     suspend fun requestJoinChallenge(challenge: Challenge) {
+        // Get the current user's email
         val requesterEmail = supabase.auth.currentUserOrNull()?.email
             ?: throw IllegalStateException("Authentication required to join a challenge")
-        val targetEmail = challenge.createdByEmail?.takeIf { it.isNotBlank() }
+        // Get the challenge owner's email
+        val targetEmail = challenge.createdByEmail?.takeIf { it.isNotBlank() } // handles empty strings
             ?: throw IllegalStateException("Challenge owner contact is unavailable")
-
+        // Can't join your own challenge
         if (targetEmail.equals(requesterEmail, ignoreCase = true)) {
             throw IllegalArgumentException("Challenge owner cannot join their own challenge")
         }
-
         // Duplicate check prevents spam requests to the same challenge
         // AI assisted - Used Claude to help implement a single request only rule to prevent spam
         val existing = postgrest.from("challenge_join_requests")
@@ -114,9 +115,9 @@ object SupabaseClient {
                 filter {
                     eq("challenge_id", challenge.id)
                     eq("requester_email", requesterEmail)
-                }
+                } // eq means equals. So both conditions must be true. Like a SQL WHERE
             }
-            .decodeList<JsonObject>()
+            .decodeList<JsonObject>() // converts raw supabase response to JSON object
 
         if (existing.isNotEmpty()) {
             throw IllegalStateException("You have already requested to join this challenge.")
@@ -134,9 +135,9 @@ object SupabaseClient {
             }
         )
 
-        val (requesterTeamName, _) = getCurrentUserProfile()
+        val (requesterTeamName, _) = getCurrentUserProfile() // _ is used since we don't care about the second value returned (location)
 
-        // Email failure is non-fatal — the DB record is already saved so the request isn't lost
+        // Email failure is non-fatal — the DB record is already saved so the request isn't lost if this fails
         runCatching {
             sendJoinRequestEmail(
                 requesterEmail = requesterEmail,
@@ -152,15 +153,19 @@ object SupabaseClient {
         requesterTeamName: String,
         targetEmail: String,
         challengeTeamName: String
-    ) = withContext(Dispatchers.IO) {
+    ) = withContext(Dispatchers.IO)
+    // withContext changes the thread this runs on
+    // Network calls shouldn't happen on the Main thread
+      {
         Log.d("SupabaseClient", "Sending email to: $targetEmail from: $requesterEmail ($requesterTeamName) for challenge: $challengeTeamName")
         // Raw HttpURLConnection used to avoid adding an HTTP library dependency
         // AI assisted - Used Claude to help me to make a POST request in kotlin
-        val connection = URL("https://api.emailjs.com/api/v1.0/email/send").openConnection() as HttpURLConnection
+        val connection = URL("https://api.emailjs.com/api/v1.0/email/send").openConnection() as HttpURLConnection // blocking call
         try {
             connection.requestMethod = "POST"
-            connection.setRequestProperty("Content-Type", "application/json")
+            connection.setRequestProperty("Content-Type", "application/json") // so emailjs knows we are sending json
             connection.doOutput = true
+            // Tells connection we intend to send a request body
 
             // Falls back to email if team name is blank (e.g. profile not fully set up)
             val displayName = if (requesterTeamName.isNotBlank()) requesterTeamName else requesterEmail
@@ -179,6 +184,7 @@ object SupabaseClient {
             // Converts the JSON string to bytes to send the POST request
             //  .use{} ensures the stream is closed automatically after
             connection.outputStream.use { it.write(body.toByteArray()) }
+            // Converting JSON string into raw bytes - network connections only understand bytes
 
             val code = connection.responseCode
             if (code !in 200..299) {

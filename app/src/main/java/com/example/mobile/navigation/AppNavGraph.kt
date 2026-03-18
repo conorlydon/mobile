@@ -2,9 +2,12 @@ package com.example.mobile.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+//getValue allows use of by with delegated properties
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+//collectAsStateWithLifecycle() collects a Flow/StateFlow into Compose state safely
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+//viewModel() gets or creates a ViewModel inside Compose
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -12,6 +15,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
 import com.example.mobile.MetricsService
+//AuthUiState represents auth state like Idle/Loading/Success/Error
 import com.example.mobile.presentation.auth.AuthUiState
 import com.example.mobile.presentation.auth.AuthViewModel
 import com.example.mobile.presentation.challenges.ChallengesViewModel
@@ -25,10 +29,13 @@ import com.example.mobile.ui.screens.RegisterScreen
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 
+//takes navController, which is what moves between screens.
 @Composable
 fun AppNavGraph(navController: NavHostController) {
+    //gets view models used by app
     val authViewModel: AuthViewModel = viewModel(factory = AuthViewModel.Factory)
     val challengesViewModel: ChallengesViewModel = viewModel(factory = ChallengesViewModel.Factory)
+    //state value the UI watches
     val logoutUiState by authViewModel.logoutUiState.collectAsStateWithLifecycle()
 
     val startDestination = if (authViewModel.hasActiveSession()) {
@@ -36,7 +43,7 @@ fun AppNavGraph(navController: NavHostController) {
     } else {
         Routes.LOGIN
     }
-
+//is used to run side effects like navigation when state changes
     LaunchedEffect(logoutUiState) {
         if (logoutUiState is AuthUiState.Success) {
             authViewModel.resetLogoutState()

@@ -155,7 +155,6 @@ object SupabaseClient {
         challengeTeamName: String
     ) = withContext(Dispatchers.IO)
     // withContext changes the thread this runs on
-    // Network calls shouldn't happen on the Main thread
       {
         Log.d("SupabaseClient", "Sending email to: $targetEmail from: $requesterEmail ($requesterTeamName) for challenge: $challengeTeamName")
         // Raw HttpURLConnection used to avoid adding an HTTP library dependency
